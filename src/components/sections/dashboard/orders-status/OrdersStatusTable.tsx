@@ -23,6 +23,7 @@ import {
   GridRowEditStopReasons,
   useGridApiRef,
 } from '@mui/x-data-grid';
+import { getOrderStatus } from 'services/dashboardService';
 
 interface OrdersStatusTableProps {
   searchText: string;
@@ -34,7 +35,19 @@ const OrdersStatusTable = ({ searchText }: OrdersStatusTableProps) => {
   const [rowModesModel, setRowModesModel] = useState<GridRowModesModel>({});
 
   useEffect(() => {
-    apiRef.current.setQuickFilterValues(searchText.split(/\b\W+\b/).filter((word) => word !== ''));
+    const fetchData = async () => {
+      try {
+        const data = await getOrderStatus(searchText);
+        const mappedRows = data.map((row) => ({
+          ...row,
+          id: row._id,
+        }));
+        setRows(mappedRows);
+      } catch (error) {
+        setRows([]);
+      }
+    };
+    fetchData();
   }, [searchText]);
 
   const handleRowEditStop: GridEventListener<'rowEditStop'> = (params, event) => {
@@ -79,37 +92,30 @@ const OrdersStatusTable = ({ searchText }: OrdersStatusTableProps) => {
 
   const columns: GridColDef[] = [
     {
-      field: 'id',
-      headerName: 'Order',
-      minWidth: 80,
-      flex: 1,
-      resizable: false,
-    },
-    {
-      field: 'client',
-      headerName: 'Client',
+      field: 'user',
+      headerName: 'User',
       flex: 2,
       minWidth: 180,
       resizable: false,
       renderHeader: () => (
-        <Stack alignItems="center" gap={0.75}>
+        <Stack alignItems="center" marginLeft="50px" gap={0.75}>
           <IconifyIcon icon="mingcute:user-2-fill" color="neutral.main" fontSize="body2.fontSize" />
           <Typography variant="caption" mt={0.25} letterSpacing={0.5}>
-            Client
+            User
           </Typography>
         </Stack>
       ),
-      valueGetter: (params: { name: string; email: string }) => {
-        return `${params.name} ${params.email}`;
+      valueGetter: (params: { username: string; email: string }) => {
+        return `${params.username} ${params.email}`;
       },
       renderCell: (params) => {
         return (
-          <Stack direction="column" alignSelf="center" justifyContent="center" sx={{ height: 1 }}>
+          <Stack direction="column" marginLeft="50px" alignSelf="center" justifyContent="center" sx={{ height: 1 }}>
             <Typography variant="subtitle1" fontSize="caption.fontSize">
-              {params.row.client.name}
+              {params.row.user.username}
             </Typography>
             <Typography variant="subtitle2" color="text.secondary" fontSize="caption.fontSize">
-              {params.row.client.email}
+              {params.row.user.email}
             </Typography>
           </Stack>
         );
@@ -117,7 +123,7 @@ const OrdersStatusTable = ({ searchText }: OrdersStatusTableProps) => {
       sortComparator: (v1, v2) => v1.localeCompare(v2),
     },
     {
-      field: 'date',
+      field: 'order_date',
       type: 'date',
       headerName: 'Date',
       editable: true,
@@ -128,11 +134,14 @@ const OrdersStatusTable = ({ searchText }: OrdersStatusTableProps) => {
         <Stack alignItems="center" gap={0.75}>
           <IconifyIcon icon="mdi:calendar" color="neutral.main" fontSize="body1.fontSize" />
           <Typography mt={0.175} variant="caption" letterSpacing={0.5}>
-            Date
+            Order Date
           </Typography>
         </Stack>
       ),
-      renderCell: (params) => format(new Date(params.value), 'MMM dd, yyyy'),
+      valueGetter: (params) => {
+        return params ? new Date(params) : null;
+      },
+      renderCell: (params) => params.value ? format(new Date(params.value), 'MMM dd yyyy') : null,
     },
     {
       field: 'status',
@@ -179,8 +188,8 @@ const OrdersStatusTable = ({ searchText }: OrdersStatusTableProps) => {
       editable: true,
     },
     {
-      field: 'country',
-      headerName: 'Country',
+      field: 'products',
+      headerName: 'Products',
       sortable: false,
       flex: 1,
       minWidth: 120,
@@ -194,13 +203,30 @@ const OrdersStatusTable = ({ searchText }: OrdersStatusTableProps) => {
             fontSize="h5.fontSize"
           />
           <Typography mt={0.175} variant="caption" letterSpacing={0.5}>
-            Country
+            Products
           </Typography>
         </Stack>
       ),
+      renderCell: (params) => {
+        return (
+          <Stack direction="column" alignSelf="center" justifyContent="center" sx={{ height: 1 }}>
+            {Array.isArray(params.row.products) && params.row.products.length > 0 ? (
+              params.row.products.map((item: { title: string }, idx: number) => (
+                <Typography key={idx} variant="subtitle2" fontSize="caption.fontSize">
+                  {item.title}
+                </Typography>
+              ))
+            ) : (
+              <Typography variant="subtitle2" color="text.secondary" fontSize="caption.fontSize">
+                No products
+              </Typography>
+            )}
+          </Stack>
+        );
+      },
     },
     {
-      field: 'total',
+      field: 'total_amount',
       headerName: 'Total',
       headerAlign: 'right',
       align: 'right',
@@ -217,6 +243,13 @@ const OrdersStatusTable = ({ searchText }: OrdersStatusTableProps) => {
       flex: 1,
       cellClassName: 'actions',
       resizable: false,
+      renderHeader: () => (
+        <Stack alignItems="center" gap={0.75}>
+          <Typography mt={0.175} variant="caption" letterSpacing={0.5}>
+            Action
+          </Typography>
+        </Stack>
+      ),
       getActions: ({ id }) => {
         const isInEditMode = rowModesModel[id]?.mode === GridRowModes.Edit;
 

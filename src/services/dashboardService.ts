@@ -1,16 +1,9 @@
+import { GridRowsProp } from '@mui/x-data-grid';
 import axios from 'axios';
 
-// Fetch dashboard summary data
-export const getDashboardSummary = () => {
-  return axios.get('/api/dashboard/summary');
-};
+const API_BASE_URL = 'http://localhost:5000/api';
 
-// Fetch dashboard statistics
-export const getDashboardStats = () => {
-  return axios.get('/api/dashboard/stats');
-};
-
-// Fetch recent activities for the dashboard
-export const getRecentActivities = () => {
-  return axios.get('/api/dashboard/activities');
+export const getOrderStatus = async (searchText = ''): Promise<GridRowsProp> => {
+  const response = await axios.post(`${API_BASE_URL}/order/list`, { search: searchText });
+  return response.data.data;
 };
