@@ -7,3 +7,8 @@ export const getOrderStatus = async (searchText = ''): Promise<GridRowsProp> => 
   const response = await axios.post(`${API_BASE_URL}/order/list`, { search: searchText });
   return response.data.data;
 };
+
+export const getProductStats = async() => {
+  const response = await axios.get(`${API_BASE_URL}/dashboard/product/stats`);
+  return response.data.data;
+}
