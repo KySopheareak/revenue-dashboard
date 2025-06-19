@@ -2,30 +2,30 @@ import { fontFamily } from 'theme/typography';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import iPhone from 'assets/images/iPhone.png';
-import AWS8 from 'assets/images/AWS8.png';
 import Product from './Product';
+import { useEffect, useState } from 'react';
+import { getProducts } from 'services/dashboardService';
 
-const productsData = [
-  {
-    id: 1,
-    name: 'iPhone 14 Pro Max',
-    imageUrl: iPhone,
-    inStock: 524,
-    price: '1,099.00',
-  },
-  {
-    id: 2,
-    name: 'Apple Watch S8',
-    imageUrl: AWS8,
-    inStock: 320,
-    price: '799.00',
-  },
-];
+type ProductData = {
+  _id: string;
+  title: string;
+  price: number;
+  thumbnail: string;
+  stock: number | string;
+}
 
 const Products = () => {
+  const [productsData, setProductsData] = useState<ProductData[]>([]);
+  useEffect(() => {
+    const fetchData = async () => {
+      const response = await getProducts();
+      setProductsData(response);
+    };
+    fetchData();
+  }, []);
+
   return (
-    <Stack direction="column" gap={3.75} component={Paper} height={300}>
+    <Stack direction="column" gap={3.75} component={Paper} p={2.5} width={1} sx={{ height: 500 }}>
       <Typography variant="h6" fontWeight={400} fontFamily={fontFamily.workSans}>
         Products
       </Typography>
@@ -34,14 +34,17 @@ const Products = () => {
         <Typography variant="caption" fontWeight={400}>
           Products
         </Typography>
+        
         <Typography variant="caption" fontWeight={400}>
           Price
         </Typography>
       </Stack>
 
-      {productsData.map((item) => {
-        return <Product key={item.id} data={item} />;
-      })}
+      <Stack direction="column" gap={1} sx={{ overflowY: 'auto', flex: 1, maxHeight: '400px' }}>
+        {productsData.map((item) => {
+          return <Product key={item._id} data={item} />;
+        })}
+      </Stack>
     </Stack>
   );
 };

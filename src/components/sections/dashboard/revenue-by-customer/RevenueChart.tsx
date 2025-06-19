@@ -12,6 +12,8 @@ import {
 } from 'echarts/components';
 import ReactEchart from 'components/base/ReactEchart';
 import EChartsReactCore from 'echarts-for-react/lib/core';
+import { formatThousand } from 'functions/formatNumber';
+import { useRevenueData } from '.';
 
 echarts.use([
   TooltipComponent,
@@ -23,12 +25,13 @@ echarts.use([
 ]);
 
 interface BarChartProps {
-  data: {
-    categories: string[];
+  data?: {
+    monthly: string[];
     series: {
       name: string;
       data: number[];
     }[];
+    totalOrders: number;
   };
   sx?: SxProps;
   chartRef: React.RefObject<EChartsReactCore>;
@@ -36,6 +39,8 @@ interface BarChartProps {
 
 const RevenueChart = ({ chartRef, data, ...rest }: BarChartProps) => {
   const theme = useTheme();
+  const revenueData = useRevenueData();
+  console.log('revenueData2', revenueData);
 
   const option = useMemo(
     () => ({
@@ -53,7 +58,7 @@ const RevenueChart = ({ chartRef, data, ...rest }: BarChartProps) => {
       },
       xAxis: {
         type: 'category',
-        data: data.categories,
+        data: revenueData?.monthly,
         axisTick: {
           show: false,
         },
@@ -76,18 +81,8 @@ const RevenueChart = ({ chartRef, data, ...rest }: BarChartProps) => {
           formatter: (value: number) => {
             if (value === 0) {
               return '0K';
-            } else if (value === 20000) {
-              return '20K';
-            } else if (value === 40000) {
-              return '40K';
-            } else if (value === 60000) {
-              return '60K';
-            } else if (value === 80000) {
-              return '80K';
-            } else if (value === 100000) {
-              return '100K';
             } else {
-              return value;
+              return formatThousand(value);
             }
           },
         },
@@ -97,7 +92,7 @@ const RevenueChart = ({ chartRef, data, ...rest }: BarChartProps) => {
         interval: 20000,
         max: 100000,
       },
-      series: data.series.map((item, index) => ({
+      series: data?.series.map((item, index) => ({
         name: item.name,
         type: 'bar',
         stack: 'total',

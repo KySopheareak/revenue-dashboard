@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { revenueData } from './index';
+import { useRevenueData } from './index';
 import Stack from '@mui/material/Stack';
 import EChartsReactCore from 'echarts-for-react/lib/core';
 import RevenueChartLegend from './RevenueChartLegend';
@@ -12,35 +12,36 @@ interface LegendsProps {
 const legendsData = [
   {
     id: 1,
-    type: 'Current clients',
+    type: 'Paid',
   },
   {
     id: 2,
-    type: 'Subscribers',
+    type: 'Unpaid',
   },
   {
     id: 3,
-    type: 'New customers',
+    type: 'Cancelled',
   },
 ];
 
 const RevenueChartLegends = ({ chartRef, sm }: LegendsProps) => {
   const [toggleColor, setToggleColor] = useState({
-    currentClients: true,
-    subscribers: true,
-    newCustomers: true,
+    paid: true,
+    unpaid: true,
+    cancelled: true,
   });
-
+  const revenueData = useRevenueData();
+  
   const handleLegendToggle = (seriesName: string) => {
     const echartsInstance = chartRef.current?.getEchartsInstance();
     if (!echartsInstance) return;
 
-    if (seriesName === 'Current clients') {
-      setToggleColor({ ...toggleColor, currentClients: !toggleColor.currentClients });
-    } else if (seriesName === 'Subscribers') {
-      setToggleColor({ ...toggleColor, subscribers: !toggleColor.subscribers });
-    } else if (seriesName === 'New customers') {
-      setToggleColor({ ...toggleColor, newCustomers: !toggleColor.newCustomers });
+    if (seriesName === 'Paid') {
+      setToggleColor({ ...toggleColor, paid: !toggleColor.paid });
+    } else if (seriesName === 'Unpaid') {
+      setToggleColor({ ...toggleColor, unpaid: !toggleColor.unpaid });
+    } else if (seriesName === 'Cancelled') {
+      setToggleColor({ ...toggleColor, cancelled: !toggleColor.cancelled });
     }
 
     const option = echartsInstance.getOption() as echarts.EChartsOption;
@@ -53,7 +54,7 @@ const RevenueChartLegends = ({ chartRef, sm }: LegendsProps) => {
             ...s,
             data: isBarVisible
               ? (s.data as number[]).map(() => 0)
-              : revenueData.series.find((s) => s.name === seriesName)?.data || [],
+              : revenueData?.series.find((s) => s.name === seriesName)?.data || [],
           };
         }
         return s;

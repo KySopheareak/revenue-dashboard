@@ -10,9 +10,9 @@ interface LegendProps {
     type: string;
   };
   toggleColor: {
-    currentClients: boolean;
-    subscribers: boolean;
-    newCustomers: boolean;
+    paid: boolean;
+    unpaid: boolean;
+    cancelled: boolean;
   };
   handleLegendToggle: (seriesName: string) => void;
 }
@@ -20,11 +20,11 @@ interface LegendProps {
 const RevenueChartLegend = ({ data, toggleColor, handleLegendToggle }: LegendProps) => {
   let color = '';
 
-  if (toggleColor.currentClients && data.type === 'Current clients') {
+  if (toggleColor.paid && data.type === 'Paid') {
     color = 'primary.main';
-  } else if (toggleColor.subscribers && data.type === 'Subscribers') {
+  } else if (toggleColor.unpaid && data.type === 'Unpaid') {
     color = 'secondary.lighter';
-  } else if (toggleColor.newCustomers && data.type === 'New customers') {
+  } else if (toggleColor.cancelled && data.type === 'Cancelled') {
     color = 'secondary.light';
   } else {
     color = 'text.secondary';

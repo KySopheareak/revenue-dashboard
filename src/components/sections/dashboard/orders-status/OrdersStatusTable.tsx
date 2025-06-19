@@ -24,6 +24,7 @@ import {
   useGridApiRef,
 } from '@mui/x-data-grid';
 import { getOrderStatus } from 'services/dashboardService';
+import { formatNumber } from 'functions/formatNumber';
 
 interface OrdersStatusTableProps {
   searchText: string;
@@ -234,6 +235,7 @@ const OrdersStatusTable = ({ searchText }: OrdersStatusTableProps) => {
       minWidth: 120,
       flex: 1,
       resizable: false,
+      renderCell: (params) => formatNumber(Number(params.value)),
     },
     {
       field: 'actions',

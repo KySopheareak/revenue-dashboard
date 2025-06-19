@@ -10,7 +10,7 @@ import RateChip from 'components/chips/RateChip';
 interface TopCardProps {
   icon: string;
   title: string;
-  value: string;
+  value: number | string;
   rate: string;
   isUp: boolean;
 }

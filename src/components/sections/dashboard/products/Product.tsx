@@ -6,29 +6,28 @@ import Image from 'components/base/Image';
 
 interface ProductInfoProps {
   data: {
-    imageUrl: string;
-    name: string;
-    inStock: number | string;
+    thumbnail: string;
+    title: string;
+    stock: number | string;
     price: number | string;
   };
 }
 
 const Product = ({ data }: ProductInfoProps) => {
-  const { imageUrl, name, inStock, price } = data;
-
+  const { thumbnail, title, stock, price } = data;
   return (
     <Stack alignItems="center" justifyContent="space-between">
       <Stack spacing={2} alignItems="center">
         <Box height={46} width={46} bgcolor="info.dark" borderRadius={1.25}>
-          <Image src={imageUrl} height={1} width={1} sx={{ objectFit: 'contain' }} />
+          <Image src={thumbnail} height={1} width={1} sx={{ objectFit: 'contain' }} />
         </Box>
 
         <Stack direction="column">
           <Typography variant="body2" fontWeight={600}>
-            {name}
+            {title}
           </Typography>
           <Typography variant="caption" color="text.secondary" fontWeight={500}>
-            {inStock} in stock
+            {stock} in stock
           </Typography>
         </Stack>
       </Stack>
