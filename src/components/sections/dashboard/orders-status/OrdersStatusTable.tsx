@@ -10,341 +10,342 @@ import StatusChip from 'components/chips/StatusChip';
 import IconifyIcon from 'components/base/IconifyIcon';
 import DataGridFooter from 'components/common/DataGridFooter';
 import {
-  GridRowModesModel,
-  GridRowModes,
-  DataGrid,
-  GridApi,
-  GridColDef,
-  GridActionsCellItem,
-  GridRenderEditCellParams,
-  GridEventListener,
-  GridRowId,
-  GridRowModel,
-  GridRowEditStopReasons,
-  useGridApiRef,
+    GridRowModesModel,
+    GridRowModes,
+    DataGrid,
+    GridApi,
+    GridColDef,
+    GridActionsCellItem,
+    GridRenderEditCellParams,
+    GridEventListener,
+    GridRowId,
+    GridRowModel,
+    GridRowEditStopReasons,
+    useGridApiRef,
 } from '@mui/x-data-grid';
 import { getOrderStatus } from 'services/dashboardService';
 import { formatNumber } from 'functions/formatNumber';
 
 interface OrdersStatusTableProps {
-  searchText: string;
+    searchText: string;
+    searchDate: Date | null;
 }
 
-const OrdersStatusTable = ({ searchText }: OrdersStatusTableProps) => {
-  const apiRef = useGridApiRef<GridApi>();
-  const [rows, setRows] = useState(ordersStatusData);
-  const [rowModesModel, setRowModesModel] = useState<GridRowModesModel>({});
+const OrdersStatusTable = ({ searchText, searchDate }: OrdersStatusTableProps) => {
+    const apiRef = useGridApiRef<GridApi>();
+    const [rows, setRows] = useState(ordersStatusData);
+    const [rowModesModel, setRowModesModel] = useState<GridRowModesModel>({});
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data = await getOrderStatus(searchText);
-        const mappedRows = data.map((row) => ({
-          ...row,
-          id: row._id,
-        }));
-        setRows(mappedRows);
-      } catch (error) {
-        setRows([]);
-      }
-    };
-    fetchData();
-  }, [searchText]);
-
-  const handleRowEditStop: GridEventListener<'rowEditStop'> = (params, event) => {
-    if (params.reason === GridRowEditStopReasons.rowFocusOut) {
-      event.defaultMuiPrevented = true;
-    }
-  };
-
-  const handleEditClick = (id: GridRowId) => () => {
-    setRowModesModel({ ...rowModesModel, [id]: { mode: GridRowModes.Edit } });
-  };
-
-  const handleSaveClick = (id: GridRowId) => () => {
-    setRowModesModel({ ...rowModesModel, [id]: { mode: GridRowModes.View } });
-  };
-
-  const handleDeleteClick = (id: GridRowId) => () => {
-    setRows(rows.filter((row) => row.id !== id));
-  };
-
-  const handleCancelClick = (id: GridRowId) => () => {
-    setRowModesModel({
-      ...rowModesModel,
-      [id]: { mode: GridRowModes.View, ignoreModifications: true },
-    });
-
-    const editedRow = rows.find((row) => row.id === id);
-    if (editedRow!.isNew) {
-      setRows(rows.filter((row) => row.id !== id));
-    }
-  };
-
-  const processRowUpdate = (newRow: GridRowModel) => {
-    const updatedRow = { ...newRow, isNew: false };
-    setRows(rows.map((row) => (row.id === newRow.id ? updatedRow : row)));
-    return updatedRow;
-  };
-
-  const handleRowModesModelChange = (newRowModesModel: GridRowModesModel) => {
-    setRowModesModel(newRowModesModel);
-  };
-
-  const columns: GridColDef[] = [
-    {
-      field: 'user',
-      headerName: 'User',
-      flex: 2,
-      minWidth: 180,
-      resizable: false,
-      renderHeader: () => (
-        <Stack alignItems="center" marginLeft="50px" gap={0.75}>
-          <IconifyIcon icon="mingcute:user-2-fill" color="neutral.main" fontSize="body2.fontSize" />
-          <Typography variant="caption" mt={0.25} letterSpacing={0.5}>
-            User
-          </Typography>
-        </Stack>
-      ),
-      valueGetter: (params: { username: string; email: string }) => {
-        return `${params.username} ${params.email}`;
-      },
-      renderCell: (params) => {
-        return (
-          <Stack direction="column" marginLeft="50px" alignSelf="center" justifyContent="center" sx={{ height: 1 }}>
-            <Typography variant="subtitle1" fontSize="caption.fontSize">
-              {params.row.user.username}
-            </Typography>
-            <Typography variant="subtitle2" color="text.secondary" fontSize="caption.fontSize">
-              {params.row.user.email}
-            </Typography>
-          </Stack>
-        );
-      },
-      sortComparator: (v1, v2) => v1.localeCompare(v2),
-    },
-    {
-      field: 'order_date',
-      type: 'date',
-      headerName: 'Date',
-      editable: true,
-      minWidth: 100,
-      flex: 1,
-      resizable: false,
-      renderHeader: () => (
-        <Stack alignItems="center" gap={0.75}>
-          <IconifyIcon icon="mdi:calendar" color="neutral.main" fontSize="body1.fontSize" />
-          <Typography mt={0.175} variant="caption" letterSpacing={0.5}>
-            Order Date
-          </Typography>
-        </Stack>
-      ),
-      valueGetter: (params) => {
-        return params ? new Date(params) : null;
-      },
-      renderCell: (params) => params.value ? format(new Date(params.value), 'MMM dd yyyy') : null,
-    },
-    {
-      field: 'status',
-      headerName: 'Status',
-      sortable: false,
-      minWidth: 120,
-      flex: 1,
-      resizable: false,
-      renderHeader: () => (
-        <Stack alignItems="center" gap={0.875}>
-          <IconifyIcon
-            icon="carbon:checkbox-checked-filled"
-            color="neutral.main"
-            fontSize="body1.fontSize"
-          />
-          <Typography mt={0.175} variant="caption" letterSpacing={0.5}>
-            Status
-          </Typography>
-        </Stack>
-      ),
-      renderCell: (params) => {
-        return (
-          <Stack direction="column" alignSelf="center" justifyContent="center" sx={{ height: 1 }}>
-            <StatusChip status={params.value} />
-          </Stack>
-        );
-      },
-      renderEditCell: (params: GridRenderEditCellParams) => {
-        const handleChange = (event: SelectChangeEvent<string>) => {
-          params.api.setEditCellValue({
-            id: params.id,
-            field: params.field,
-            value: event.target.value,
-          });
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const data = await getOrderStatus(searchText, searchDate);
+                const mappedRows = data.map((row) => ({
+                    ...row,
+                    id: row._id,
+                }));
+                setRows(mappedRows);
+            } catch (error) {
+                setRows([]);
+            }
         };
-        return (
-          <Select value={params.value} onChange={handleChange} fullWidth>
-            <MenuItem value="delivered">Delivered</MenuItem>
-            <MenuItem value="pending">Pending</MenuItem>
-            <MenuItem value="canceled">Canceled</MenuItem>
-          </Select>
-        );
-      },
-      editable: true,
-    },
-    {
-      field: 'products',
-      headerName: 'Products',
-      sortable: false,
-      flex: 1,
-      minWidth: 120,
-      resizable: false,
-      editable: true,
-      renderHeader: () => (
-        <Stack alignItems="center" gap={0.75}>
-          <IconifyIcon
-            icon="healthicons:geo-location"
-            color="neutral.main"
-            fontSize="h5.fontSize"
-          />
-          <Typography mt={0.175} variant="caption" letterSpacing={0.5}>
-            Products
-          </Typography>
-        </Stack>
-      ),
-      renderCell: (params) => {
-        return (
-          <Stack direction="column" alignSelf="center" justifyContent="center" sx={{ height: 1 }}>
-            {Array.isArray(params.row.products) && params.row.products.length > 0 ? (
-              params.row.products.map((item: { title: string }, idx: number) => (
-                <Typography key={idx} variant="subtitle2" fontSize="caption.fontSize">
-                  {item.title}
-                </Typography>
-              ))
-            ) : (
-              <Typography variant="subtitle2" color="text.secondary" fontSize="caption.fontSize">
-                No products
-              </Typography>
-            )}
-          </Stack>
-        );
-      },
-    },
-    {
-      field: 'total_amount',
-      headerName: 'Total',
-      headerAlign: 'right',
-      align: 'right',
-      sortable: false,
-      minWidth: 120,
-      flex: 1,
-      resizable: false,
-      renderCell: (params) => formatNumber(Number(params.value)),
-    },
-    {
-      field: 'actions',
-      type: 'actions',
-      headerName: '',
-      minWidth: 120,
-      flex: 1,
-      cellClassName: 'actions',
-      resizable: false,
-      renderHeader: () => (
-        <Stack alignItems="center" gap={0.75}>
-          <Typography mt={0.175} variant="caption" letterSpacing={0.5}>
-            Action
-          </Typography>
-        </Stack>
-      ),
-      getActions: ({ id }) => {
-        const isInEditMode = rowModesModel[id]?.mode === GridRowModes.Edit;
+        fetchData();
+    }, [searchText, searchDate]);
 
-        if (isInEditMode) {
-          return [
-            <GridActionsCellItem
-              icon={
-                <IconifyIcon
-                  color="primary.main"
-                  icon="mdi:content-save"
-                  sx={{ fontSize: 'body1.fontSize', pointerEvents: 'none' }}
-                />
-              }
-              label="Save"
-              onClick={handleSaveClick(id)}
-              size="small"
-            />,
-            <GridActionsCellItem
-              icon={
-                <IconifyIcon
-                  color="text.secondary"
-                  icon="iconamoon:sign-times-duotone"
-                  sx={{ fontSize: 'body1.fontSize', pointerEvents: 'none' }}
-                />
-              }
-              label="Cancel"
-              onClick={handleCancelClick(id)}
-              size="small"
-            />,
-          ];
+    const handleRowEditStop: GridEventListener<'rowEditStop'> = (params, event) => {
+        if (params.reason === GridRowEditStopReasons.rowFocusOut) {
+            event.defaultMuiPrevented = true;
         }
+    };
 
-        return [
-          <GridActionsCellItem
-            icon={
-              <IconifyIcon
-                icon="fluent:edit-32-filled"
-                color="text.secondary"
-                sx={{ fontSize: 'body1.fontSize', pointerEvents: 'none' }}
-              />
-            }
-            label="Edit"
-            onClick={handleEditClick(id)}
-            size="small"
-          />,
-          <GridActionsCellItem
-            icon={
-              <IconifyIcon
-                icon="mingcute:delete-3-fill"
-                color="text.secondary"
-                sx={{ fontSize: 'body1.fontSize', pointerEvents: 'none' }}
-              />
-            }
-            label="Delete"
-            onClick={handleDeleteClick(id)}
-            size="small"
-          />,
-        ];
-      },
-    },
-  ];
+    const handleEditClick = (id: GridRowId) => () => {
+        setRowModesModel({ ...rowModesModel, [id]: { mode: GridRowModes.Edit } });
+    };
 
-  return (
-    <DataGrid
-      apiRef={apiRef}
-      rows={rows}
-      columns={columns}
-      rowHeight={80}
-      editMode="row"
-      initialState={{
-        pagination: {
-          paginationModel: {
-            pageSize: 6,
-          },
+    const handleSaveClick = (id: GridRowId) => () => {
+        setRowModesModel({ ...rowModesModel, [id]: { mode: GridRowModes.View } });
+    };
+
+    const handleDeleteClick = (id: GridRowId) => () => {
+        setRows(rows.filter((row) => row.id !== id));
+    };
+
+    const handleCancelClick = (id: GridRowId) => () => {
+        setRowModesModel({
+            ...rowModesModel,
+            [id]: { mode: GridRowModes.View, ignoreModifications: true },
+        });
+
+        const editedRow = rows.find((row) => row.id === id);
+        if (editedRow!.isNew) {
+            setRows(rows.filter((row) => row.id !== id));
+        }
+    };
+
+    const processRowUpdate = (newRow: GridRowModel) => {
+        const updatedRow = { ...newRow, isNew: false };
+        setRows(rows.map((row) => (row.id === newRow.id ? updatedRow : row)));
+        return updatedRow;
+    };
+
+    const handleRowModesModelChange = (newRowModesModel: GridRowModesModel) => {
+        setRowModesModel(newRowModesModel);
+    };
+
+    const columns: GridColDef[] = [
+        {
+            field: 'user',
+            headerName: 'User',
+            flex: 2,
+            minWidth: 180,
+            resizable: false,
+            renderHeader: () => (
+                <Stack alignItems="center" marginLeft="50px" gap={0.75}>
+                    <IconifyIcon icon="mingcute:user-2-fill" color="neutral.main" fontSize="body2.fontSize" />
+                    <Typography variant="caption" mt={0.25} letterSpacing={0.5}>
+                        User
+                    </Typography>
+                </Stack>
+            ),
+            valueGetter: (params: { username: string; email: string }) => {
+                return `${params.username} ${params.email}`;
+            },
+            renderCell: (params) => {
+                return (
+                    <Stack direction="column" marginLeft="50px" alignSelf="center" justifyContent="center" sx={{ height: 1 }}>
+                        <Typography variant="subtitle1" fontSize="caption.fontSize">
+                            {params.row.user.username}
+                        </Typography>
+                        <Typography variant="subtitle2" color="text.secondary" fontSize="caption.fontSize">
+                            {params.row.user.email}
+                        </Typography>
+                    </Stack>
+                );
+            },
+            sortComparator: (v1, v2) => v1.localeCompare(v2),
         },
-      }}
-      checkboxSelection
-      pageSizeOptions={[6]}
-      disableColumnMenu
-      disableVirtualization
-      disableRowSelectionOnClick
-      rowModesModel={rowModesModel}
-      onRowModesModelChange={handleRowModesModelChange}
-      onRowEditStop={handleRowEditStop}
-      processRowUpdate={processRowUpdate}
-      slots={{
-        pagination: DataGridFooter,
-      }}
-      slotProps={{
-        toolbar: { setRows, setRowModesModel },
-      }}
-    />
-  );
+        {
+            field: 'order_date',
+            type: 'date',
+            headerName: 'Date',
+            editable: true,
+            minWidth: 100,
+            flex: 1,
+            resizable: false,
+            renderHeader: () => (
+                <Stack alignItems="center" gap={0.75}>
+                    <IconifyIcon icon="mdi:calendar" color="neutral.main" fontSize="body1.fontSize" />
+                    <Typography mt={0.175} variant="caption" letterSpacing={0.5}>
+                        Order Date
+                    </Typography>
+                </Stack>
+            ),
+            valueGetter: (params) => {
+                return params ? new Date(params) : null;
+            },
+            renderCell: (params) => params.value ? format(new Date(params.value), 'MMM dd yyyy') : null,
+        },
+        {
+            field: 'status',
+            headerName: 'Status',
+            sortable: false,
+            minWidth: 120,
+            flex: 1,
+            resizable: false,
+            renderHeader: () => (
+                <Stack alignItems="center" gap={0.875}>
+                    <IconifyIcon
+                        icon="carbon:checkbox-checked-filled"
+                        color="neutral.main"
+                        fontSize="body1.fontSize"
+                    />
+                    <Typography mt={0.175} variant="caption" letterSpacing={0.5}>
+                        Status
+                    </Typography>
+                </Stack>
+            ),
+            renderCell: (params) => {
+                return (
+                    <Stack direction="column" alignSelf="center" justifyContent="center" sx={{ height: 1 }}>
+                        <StatusChip status={params.value} />
+                    </Stack>
+                );
+            },
+            renderEditCell: (params: GridRenderEditCellParams) => {
+                const handleChange = (event: SelectChangeEvent<string>) => {
+                    params.api.setEditCellValue({
+                        id: params.id,
+                        field: params.field,
+                        value: event.target.value,
+                    });
+                };
+                return (
+                    <Select value={params.value} onChange={handleChange} fullWidth>
+                        <MenuItem value="paid">Paid</MenuItem>
+                        <MenuItem value="unpaid">Unpaid</MenuItem>
+                        <MenuItem value="canceled">Canceled</MenuItem>
+                    </Select>
+                );
+            },
+            editable: true,
+        },
+        {
+            field: 'products',
+            headerName: 'Products',
+            sortable: false,
+            flex: 1,
+            minWidth: 120,
+            resizable: false,
+            editable: true,
+            renderHeader: () => (
+                <Stack alignItems="center" gap={0.75}>
+                    <IconifyIcon
+                        icon="healthicons:geo-location"
+                        color="neutral.main"
+                        fontSize="h5.fontSize"
+                    />
+                    <Typography mt={0.175} variant="caption" letterSpacing={0.5}>
+                        Products
+                    </Typography>
+                </Stack>
+            ),
+            renderCell: (params) => {
+                return (
+                    <Stack direction="column" alignSelf="center" justifyContent="center" sx={{ height: 1 }}>
+                        {Array.isArray(params.row.products) && params.row.products.length > 0 ? (
+                            params.row.products.map((item: { title: string }, idx: number) => (
+                                <Typography key={idx} variant="subtitle2" fontSize="caption.fontSize">
+                                    {item.title}
+                                </Typography>
+                            ))
+                        ) : (
+                            <Typography variant="subtitle2" color="text.secondary" fontSize="caption.fontSize">
+                                No products
+                            </Typography>
+                        )}
+                    </Stack>
+                );
+            },
+        },
+        {
+            field: 'total_amount',
+            headerName: 'Total',
+            headerAlign: 'right',
+            align: 'right',
+            sortable: false,
+            minWidth: 120,
+            flex: 1,
+            resizable: false,
+            renderCell: (params) => formatNumber(Number(params.value)),
+        },
+        {
+            field: 'actions',
+            type: 'actions',
+            headerName: '',
+            minWidth: 120,
+            flex: 1,
+            cellClassName: 'actions',
+            resizable: false,
+            renderHeader: () => (
+                <Stack alignItems="center" gap={0.75}>
+                    <Typography mt={0.175} variant="caption" letterSpacing={0.5}>
+                        Action
+                    </Typography>
+                </Stack>
+            ),
+            getActions: ({ id }) => {
+                const isInEditMode = rowModesModel[id]?.mode === GridRowModes.Edit;
+
+                if (isInEditMode) {
+                    return [
+                        <GridActionsCellItem
+                            icon={
+                                <IconifyIcon
+                                    color="primary.main"
+                                    icon="mdi:content-save"
+                                    sx={{ fontSize: 'body1.fontSize', pointerEvents: 'none' }}
+                                />
+                            }
+                            label="Save"
+                            onClick={handleSaveClick(id)}
+                            size="small"
+                        />,
+                        <GridActionsCellItem
+                            icon={
+                                <IconifyIcon
+                                    color="text.secondary"
+                                    icon="iconamoon:sign-times-duotone"
+                                    sx={{ fontSize: 'body1.fontSize', pointerEvents: 'none' }}
+                                />
+                            }
+                            label="Cancel"
+                            onClick={handleCancelClick(id)}
+                            size="small"
+                        />,
+                    ];
+                }
+
+                return [
+                    <GridActionsCellItem
+                        icon={
+                            <IconifyIcon
+                                icon="fluent:edit-32-filled"
+                                color="text.secondary"
+                                sx={{ fontSize: 'body1.fontSize', pointerEvents: 'none' }}
+                            />
+                        }
+                        label="Edit"
+                        onClick={handleEditClick(id)}
+                        size="small"
+                    />,
+                    <GridActionsCellItem
+                        icon={
+                            <IconifyIcon
+                                icon="mingcute:delete-3-fill"
+                                color="text.secondary"
+                                sx={{ fontSize: 'body1.fontSize', pointerEvents: 'none' }}
+                            />
+                        }
+                        label="Delete"
+                        onClick={handleDeleteClick(id)}
+                        size="small"
+                    />,
+                ];
+            },
+        },
+    ];
+
+    return (
+        <DataGrid
+            apiRef={apiRef}
+            rows={rows}
+            columns={columns}
+            rowHeight={80}
+            editMode="row"
+            initialState={{
+                pagination: {
+                    paginationModel: {
+                        pageSize: 6,
+                    },
+                },
+            }}
+            checkboxSelection
+            pageSizeOptions={[6]}
+            disableColumnMenu
+            disableVirtualization
+            disableRowSelectionOnClick
+            rowModesModel={rowModesModel}
+            onRowModesModelChange={handleRowModesModelChange}
+            onRowEditStop={handleRowEditStop}
+            processRowUpdate={processRowUpdate}
+            slots={{
+                pagination: DataGridFooter,
+            }}
+            slotProps={{
+                toolbar: { setRows, setRowModesModel },
+            }}
+        />
+    );
 };
 
 export default OrdersStatusTable;

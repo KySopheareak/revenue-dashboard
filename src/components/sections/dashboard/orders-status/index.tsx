@@ -12,63 +12,68 @@ import IconifyIcon from 'components/base/IconifyIcon';
 import OrdersStatusTable from './OrdersStatusTable';
 
 const OrdersStatus = () => {
-  const [searchText, setSearchText] = useState('');
+    const [searchText, setSearchText] = useState('');
+    const [searchDate, setSearchDate] = useState<Date | null>(null);
 
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setSearchText(e.target.value);
-  };
+    const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+        setSearchText(e.target.value);
+    };
 
-  return (
-    <Paper sx={{ px: 0 }}>
-      <Stack
-        px={3.5}
-        spacing={1.5}
-        alignItems={{ xs: 'flex-start', md: 'center' }}
-        justifyContent="space-between"
-      >
-        <Stack
-          spacing={2}
-          direction={{ xs: 'column', md: 'row' }}
-          alignItems={{ xs: 'flex-start', md: 'center' }}
-          justifyContent="space-between"
-          flexGrow={1}
-        >
-          <Typography variant="h6" fontWeight={400} fontFamily={fontFamily.workSans}>
-            Orders Status
-          </Typography>
-          <TextField
-            variant="filled"
-            size="small"
-            placeholder="Search for..."
-            value={searchText}
-            onChange={handleInputChange}
-            sx={{ width: 220 }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <IconifyIcon icon={'mingcute:search-line'} />
-                </InputAdornment>
-              ),
-            }}
-          />
-        </Stack>
-        <Stack
-          spacing={1.5}
-          direction={{ xs: 'column-reverse', sm: 'row' }}
-          alignItems={{ xs: 'flex-end', sm: 'center' }}
-        >
-          <DateSelect />
-          <Button variant="contained" size="small">
-            Create order
-          </Button>
-        </Stack>
-      </Stack>
+    const handleDateChange = (date: Date | null) => {
+        setSearchDate(date);
+    };
 
-      <Box mt={1.5} sx={{ height: 594, width: 1 }}>
-        <OrdersStatusTable searchText={searchText} />
-      </Box>
-    </Paper>
-  );
+    return (
+        <Paper sx={{ px: 0 }}>
+            <Stack
+                px={3.5}
+                spacing={1.5}
+                alignItems={{ xs: 'flex-start', md: 'center' }}
+                justifyContent="space-between"
+            >
+                <Stack
+                    spacing={2}
+                    direction={{ xs: 'column', md: 'row' }}
+                    alignItems={{ xs: 'flex-start', md: 'center' }}
+                    justifyContent="space-between"
+                    flexGrow={1}
+                >
+                    <Typography variant="h6" fontWeight={400} fontFamily={fontFamily.workSans}>
+                        Orders Status
+                    </Typography>
+                    <TextField
+                        variant="filled"
+                        size="small"
+                        placeholder="Search for..."
+                        value={searchText}
+                        onChange={handleInputChange}
+                        sx={{ width: 220 }}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <IconifyIcon icon={'mingcute:search-line'} />
+                                </InputAdornment>
+                            ),
+                        }}
+                    />
+                </Stack>
+                <Stack
+                    spacing={1.5}
+                    direction={{ xs: 'column-reverse', sm: 'row' }}
+                    alignItems={{ xs: 'flex-end', sm: 'center' }}
+                >
+                    <DateSelect value={searchDate} onChange={handleDateChange} />
+                    <Button variant="contained" size="small">
+                        Create order
+                    </Button>
+                </Stack>
+            </Stack>
+
+            <Box mt={1.5} sx={{ height: 594, width: 1 }}>
+                <OrdersStatusTable searchText={searchText} searchDate={searchDate} />
+            </Box>
+        </Paper>
+    );
 };
 
 export default OrdersStatus;
