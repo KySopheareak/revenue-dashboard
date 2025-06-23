@@ -14,20 +14,10 @@ const Feature = () => {
       <Grid item xs={12} xl={4}>
         <Products />
       </Grid>
-
-      {/* <Grid item xs={12} xl={4}>
-        <WebsiteVisitors />
-      </Grid> */}
-
+      
       <Grid item xs={12} xl={8}>
         <RevenueByCustomer />
       </Grid>
-
-     
-
-      {/* <Grid item xs={12} xl={8}>
-        <CompletedTask />
-      </Grid> */}
 
       <Grid item xs={12}>
         <OrdersStatus />
