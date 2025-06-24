@@ -73,3 +73,7 @@
   font-weight: 900;
   font-style: normal;
 }
+
+.css-1pnuknt-MuiButtonBase-root-MuiMenuItem-root {
+    font-size: 0.7rem !important;
+}

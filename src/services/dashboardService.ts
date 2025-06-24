@@ -1,5 +1,6 @@
 import { GridRowsProp } from '@mui/x-data-grid';
 import axios from 'axios';
+import { IOrder } from 'functions/common-interface';
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
@@ -20,5 +21,10 @@ export const getProducts = async () => {
 
 export const getOrderStats = async () => {
     const response = await axios.post(`${API_BASE_URL}/dashboard/order/stats`);
+    return response.data.data;
+}
+
+export const createOrder = async (orderData: IOrder) => {
+    const response = await axios.post(`${API_BASE_URL}/order`, orderData);
     return response.data.data;
 }

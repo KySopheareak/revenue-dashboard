@@ -27,7 +27,7 @@ const Login = () => {
 
     const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
         console.log(`Input changed: ${e.target.name} = ${e.target.value}`);
-        
+
         setUser({ ...user, [e.target.name]: e.target.value });
     };
 
@@ -35,7 +35,6 @@ const Login = () => {
         e.preventDefault();
         try {
             const response = await LoginAccount(user.username, user.password);
-            console.log('Login response:', response);
             if (response.status !== RESPONSE_STATUS.SUCCESS) return;
             localStorage.setItem('token', response.data.token);
             localStorage.setItem('user', JSON.stringify(response.data.user));
@@ -60,9 +59,9 @@ const Login = () => {
             </Stack>
             <Divider sx={{ my: 3 }}>or Login with</Divider>
             <Stack onSubmit={handleSubmit} component="form" direction="column" gap={2}>
-                <TextField id="username" name="username" type="text" value={user.username} onChange={handleInputChange} variant="filled" 
+                <TextField id="username" name="username" type="text" value={user.username} onChange={handleInputChange} variant="filled"
                     placeholder="Email or Username" autoComplete="username" fullWidth autoFocus required />
-                <TextField id="password" name="password" type={showPassword ? 'text' : 'password'} value={user.password} onChange={handleInputChange} variant="filled" 
+                <TextField id="password" name="password" type={showPassword ? 'text' : 'password'} value={user.password} onChange={handleInputChange} variant="filled"
                     placeholder="Your Password" autoComplete="current-password" fullWidth autoFocus required
                     InputProps={{
                         endAdornment: (
@@ -84,7 +83,7 @@ const Login = () => {
                     Submit
                 </Button>
                 <Typography my={3} color="text.secondary" variant="body2" align="center" letterSpacing={0.5}>
-                    Don't have an account? 
+                    Don't have an account?
                     <Link href={paths.signup}>{' Signup'}</Link>
                 </Typography>
             </Stack>

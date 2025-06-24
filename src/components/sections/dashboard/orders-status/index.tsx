@@ -10,8 +10,9 @@ import InputAdornment from '@mui/material/InputAdornment';
 import DateSelect from 'components/dates/DateSelect';
 import IconifyIcon from 'components/base/IconifyIcon';
 import OrdersStatusTable from './OrdersStatusTable';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Checkbox, FormControl, ListItemText, MenuItem, Select, SelectChangeEvent } from '@mui/material';
-import { getProducts } from 'services/dashboardService';
+import { Dialog, DialogTitle, DialogContent, DialogActions, FormControl, MenuItem, Select } from '@mui/material';
+import { createOrder, getProducts } from 'services/dashboardService';
+import { IOrder } from 'functions/common-interface';
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -19,7 +20,9 @@ const MenuProps = {
     PaperProps: {
         style: {
             maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
-            width: 250,
+            width: 200,
+            fontFamily: fontFamily.workSans,
+            fontSize: 0.875,
         },
     },
 };
@@ -36,13 +39,12 @@ const OrdersStatus = () => {
     const [searchDate, setSearchDate] = useState<Date | null>(null);
     const [openDialog, setOpenDialog] = useState(false);
     const [products, setProducts] = useState<Product[]>([]);
-    const [selectItem, ItemtoSelects] = useState<string[]>([]);
+    const [orderItems, setOrderItems] = useState([{ product: '', quantity: 0 }]);
 
     useEffect(() => {
         const fetchProducts = async () => {
             try {
                 const response = await getProducts();
-                console.log('Fetched products:', response);
                 setProducts(response);
             } catch (error) {
                 console.error('Error fetching products:', error);
@@ -60,32 +62,50 @@ const OrdersStatus = () => {
         setSearchDate(date);
     };
 
-    const handleChange = (event: SelectChangeEvent<typeof selectItem>) => {
-        console.log('Selected products:', event.target.value);
-        const { target: { value } } = event;
-        ItemtoSelects(
-            typeof value === 'string' ? value.split(',') : value,
+    // Handle change for a specific order item
+    const handleOrderItemChange = (index: number, field: 'product' | 'quantity', value: string | number) => {
+        setOrderItems((prev) =>
+            prev.map((item, i) =>
+                i === index ? { ...item, [field]: value } : item
+            )
         );
     };
 
-    const handleOpenDialog = () => setOpenDialog(true);
-    const handleCloseDialog = () => setOpenDialog(false);
+    // Add new order item
+    const handleAddOrderItem = () => {
+        setOrderItems([...orderItems, { product: '', quantity: 0 }]);
+    };
+
+    // Remove order item
+    const handleRemoveOrderItem = (index: number) => {
+        setOrderItems(orderItems.filter((_, i) => i !== index));
+    };
+
+    const handleOpenDialog = () => setOpenDialog(true);    const handleCloseDialog = async (save: boolean) => {
+        setOpenDialog(false)
+        if (save) {
+            console.log('Order created:', orderItems);
+            const userID = JSON.parse(localStorage.getItem('user') || '') 
+            const Json: IOrder = {
+                user: userID?.id,
+                products: orderItems
+            } 
+            console.log('Order JSON:', Json);
+            
+            try {
+                const response = await createOrder(Json);
+                console.log('Order created successfully:', response);
+                setOrderItems([{ product: '', quantity: 0 }]);
+            } catch (error) {
+                console.error('Error creating order:', error);
+            }
+        }
+    };
 
     return (
         <Paper sx={{ px: 0 }}>
-            <Stack
-                px={3.5}
-                spacing={1.5}
-                alignItems={{ xs: 'flex-start', md: 'center' }}
-                justifyContent="space-between"
-            >
-                <Stack
-                    spacing={2}
-                    direction={{ xs: 'column', md: 'row' }}
-                    alignItems={{ xs: 'flex-start', md: 'center' }}
-                    justifyContent="space-between"
-                    flexGrow={1}
-                >
+            <Stack px={3.5} spacing={1.5} alignItems={{ xs: 'flex-start', md: 'center' }} justifyContent="space-between">
+                <Stack spacing={2} direction={{ xs: 'column', md: 'row' }} alignItems={{ xs: 'flex-start', md: 'center' }} justifyContent="space-between" flexGrow={1}>
                     <Typography variant="h6" fontWeight={400} fontFamily={fontFamily.workSans}>
                         Orders Status
                     </Typography>
@@ -105,11 +125,7 @@ const OrdersStatus = () => {
                         }}
                     />
                 </Stack>
-                <Stack
-                    spacing={1.5}
-                    direction={{ xs: 'column-reverse', sm: 'row' }}
-                    alignItems={{ xs: 'flex-end', sm: 'center' }}
-                >
+                <Stack spacing={1.5} direction={{ xs: 'column-reverse', sm: 'row' }} alignItems={{ xs: 'flex-end', sm: 'center' }}>
                     <DateSelect value={searchDate} onChange={handleDateChange} />
                     <Button variant="contained" size="small" onClick={handleOpenDialog}>
                         Create order
@@ -123,42 +139,72 @@ const OrdersStatus = () => {
 
             <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
                 <DialogTitle>Create Order</DialogTitle>
-                <DialogContent sx={{ width: '100%', minHeight: 300 }}>
-                    <Typography variant="subtitle1" sx={{ mb: 1 }}>
-                        Search Products
-                    </Typography>
-                    <TextField
-                        variant="filled"
-                        size="small"
-                        value={searchText}
-                        onChange={handleInputChange}
-                        sx={{ width: '100%', mb: 2 }}
-                    />
-                    <FormControl sx={{ mb: 2, width: '100%' }}>
-                        <Typography variant="subtitle1" sx={{ mb: 1 }}>
-                            Select Products
-                        </Typography>
-                        <Select
-                            labelId="demo-multiple-checkbox-label"
-                            id="demo-multiple-checkbox"
-                            multiple
-                            value={selectItem}
-                            onChange={handleChange}
-                            renderValue={(selected) => selected.join(', ')}
-                            MenuProps={MenuProps}
-                        >
-                            {products.map((item) => (
-                                <MenuItem key={item._id ?? item.title ?? ''} value={item._id ?? ''}>
-                                    <Checkbox checked={selectItem.includes(item._id ?? '')} />
-                                    <ListItemText primary={item.title ?? String(item)} />
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
+                <DialogContent sx={{ width: '100%', height: 350 }}>
+                    {orderItems.map((item, idx) => (
+                        <Box key={idx}>
+                            <Typography variant="body1" sx={{flex: 0.5, fontSize: '0.8rem', fontWeight: 700, position: 'relative', top: 68, left: -25}}>
+                                {idx + 1}
+                            </Typography>
+                            <Box sx={{mb: 2, position: 'relative', display: 'flex', flexDirection: 'column', gap: 1, p: 2, borderRadius: 1, border: '1px solid #ccc', width: '80%'}}>
+                                <Box display="flex" alignItems="center" gap={2}>
+                                    <Typography variant="body1" sx={{ flex: 0.5, fontSize: '0.7rem' }}>
+                                        Product
+                                    </Typography>
+                                    <FormControl sx={{ flex: 5, minWidth: 200 }}>
+                                        <Select
+                                            value={item.product}
+                                            onChange={(e) => handleOrderItemChange(idx, 'product', e.target.value)}
+                                            displayEmpty
+                                            size="small"
+                                            MenuProps={MenuProps}
+                                            sx={{ '& .MuiSelect-icon': { color: 'white' } }}>
+                                            <MenuItem value="">
+                                                <span>-- None --</span>
+                                            </MenuItem>
+                                            {products.map((prod) => (
+                                                <MenuItem key={prod._id} value={prod._id}>
+                                                    {prod.title}
+                                                </MenuItem>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
+                                </Box>
+
+                                <Box display="flex" alignItems="center" gap={2}>
+                                    <Typography variant="body1" sx={{ flex: 0.5, fontSize: '0.7rem' }}>
+                                        Quantity
+                                    </Typography>
+                                    <FormControl sx={{ flex: 5, minWidth: 200 }}>
+                                        <TextField
+                                            type="number"
+                                            placeholder="Quantity"
+                                            size="small"
+                                            value={item.quantity}
+                                            onChange={(e) => handleOrderItemChange(idx, 'quantity', Number(e.target.value))}
+                                            inputProps={{ min: 1 }}
+                                        />
+                                    </FormControl>
+                                </Box>
+
+                                <Button
+                                    onClick={() => handleRemoveOrderItem(idx)}
+                                    disabled={orderItems.length === 1}
+                                    sx={{ position: 'absolute', right: -100, mt: 2.5 }}
+                                    color="error">
+                                    Remove
+                                </Button>
+                            </Box>
+                        </Box>
+                    ))}
+
+                    <Button onClick={handleAddOrderItem} variant="outlined" startIcon={<IconifyIcon icon={'mdi:plus'} />} 
+                        sx={{ mb: 2, minWidth: '100px', alignItems: 'center', display: 'flex', justifyContent: 'center', left: 'calc(40% - 50px)' }}>
+                        Add Product
+                    </Button>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleCloseDialog}>Cancel</Button>
-                    <Button variant="contained" onClick={handleCloseDialog}>Create</Button>
+                    <Button onClick={() => handleCloseDialog(false)}>Cancel</Button>
+                    <Button variant="contained" onClick={() => handleCloseDialog(true)}>Create</Button>
                 </DialogActions>
             </Dialog>
         </Paper>

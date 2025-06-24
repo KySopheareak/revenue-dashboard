@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ordersStatusData } from 'data/ordersStatusData';
-import { SelectChangeEvent } from '@mui/material';
+import { Box, SelectChangeEvent, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, FormControl, InputLabel } from '@mui/material';
 import Stack from '@mui/material/Stack';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
@@ -31,10 +31,20 @@ interface OrdersStatusTableProps {
     searchDate: Date | null;
 }
 
+interface EditOrderData {
+    id: string;
+    username: string;
+    email: string;
+    status: string;
+    totalAmount: number;
+}
+
 const OrdersStatusTable = ({ searchText, searchDate }: OrdersStatusTableProps) => {
     const apiRef = useGridApiRef<GridApi>();
     const [rows, setRows] = useState(ordersStatusData);
     const [rowModesModel, setRowModesModel] = useState<GridRowModesModel>({});
+    const [openEditDialog, setOpenEditDialog] = useState(false);
+    const [editingOrder, setEditingOrder] = useState<EditOrderData | null>(null);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -56,10 +66,54 @@ const OrdersStatusTable = ({ searchText, searchDate }: OrdersStatusTableProps) =
         if (params.reason === GridRowEditStopReasons.rowFocusOut) {
             event.defaultMuiPrevented = true;
         }
+    };    const handleEditClick = (id: GridRowId) => () => {
+        const row = rows.find((r) => r.id === id);
+        if (row) {
+            setEditingOrder({
+                id: id.toString(),
+                username: row.user.username,
+                email: row.user.email,
+                status: row.status,
+                totalAmount: row.total_amount
+            });
+            setOpenEditDialog(true);
+        }
     };
 
-    const handleEditClick = (id: GridRowId) => () => {
-        setRowModesModel({ ...rowModesModel, [id]: { mode: GridRowModes.Edit } });
+    const handleDialogClose = () => {
+        setOpenEditDialog(false);
+        setEditingOrder(null);
+    };
+
+    const handleDialogSave = () => {
+        if (editingOrder) {
+            const updatedRows = rows.map((row) => {
+                if (row.id === editingOrder.id) {
+                    return {
+                        ...row,
+                        user: {
+                            ...row.user,
+                            username: editingOrder.username,
+                            email: editingOrder.email
+                        },
+                        status: editingOrder.status,
+                        total_amount: editingOrder.totalAmount
+                    };
+                }
+                return row;
+            });
+            setRows(updatedRows);
+        }
+        handleDialogClose();
+    };
+
+    const handleEditOrderChange = (field: keyof EditOrderData, value: string | number) => {
+        if (editingOrder) {
+            setEditingOrder({
+                ...editingOrder,
+                [field]: value
+            });
+        }
     };
 
     const handleSaveClick = (id: GridRowId) => () => {
@@ -313,38 +367,84 @@ const OrdersStatusTable = ({ searchText, searchDate }: OrdersStatusTableProps) =
                 ];
             },
         },
-    ];
-
-    return (
-        <DataGrid
-            apiRef={apiRef}
-            rows={rows}
-            columns={columns}
-            rowHeight={80}
-            editMode="row"
-            initialState={{
-                pagination: {
-                    paginationModel: {
-                        pageSize: 6,
+    ];    return (
+        <>
+            <DataGrid
+                apiRef={apiRef}
+                rows={rows}
+                columns={columns}
+                rowHeight={80}
+                editMode="row"
+                initialState={{
+                    pagination: {
+                        paginationModel: {
+                            pageSize: 6,
+                        },
                     },
-                },
-            }}
-            checkboxSelection
-            pageSizeOptions={[6]}
-            disableColumnMenu
-            disableVirtualization
-            disableRowSelectionOnClick
-            rowModesModel={rowModesModel}
-            onRowModesModelChange={handleRowModesModelChange}
-            onRowEditStop={handleRowEditStop}
-            processRowUpdate={processRowUpdate}
-            slots={{
-                pagination: DataGridFooter,
-            }}
-            slotProps={{
-                toolbar: { setRows, setRowModesModel },
-            }}
-        />
+                }}
+                checkboxSelection
+                pageSizeOptions={[6]}
+                disableColumnMenu
+                disableVirtualization
+                disableRowSelectionOnClick
+                rowModesModel={rowModesModel}
+                onRowModesModelChange={handleRowModesModelChange}
+                onRowEditStop={handleRowEditStop}
+                processRowUpdate={processRowUpdate}
+                slots={{
+                    pagination: DataGridFooter,
+                }}
+                slotProps={{
+                    toolbar: { setRows, setRowModesModel },
+                }}
+            />
+
+            {/* Edit Order Dialog */}
+            <Dialog open={openEditDialog} onClose={handleDialogClose} maxWidth="sm" fullWidth>
+                <DialogTitle>Edit Order</DialogTitle>
+                <DialogContent>
+                    <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <TextField
+                            fullWidth
+                            value={editingOrder?.username || ''}
+                            disabled
+                            onChange={(e) => handleEditOrderChange('username', e.target.value)}
+                        />
+                        <TextField
+                            label="Email"
+                            fullWidth
+                            type="email"
+                            value={editingOrder?.email || ''}
+                            onChange={(e) => handleEditOrderChange('email', e.target.value)}
+                        />
+                        <FormControl fullWidth>
+                            <InputLabel>Status</InputLabel>
+                            <Select
+                                value={editingOrder?.status || ''}
+                                label="Status"
+                                onChange={(e) => handleEditOrderChange('status', e.target.value)}
+                                sx={{ '& .MuiSelect-icon': { color: 'white' } }}
+                            >
+                                <MenuItem value="paid">Paid</MenuItem>
+                                <MenuItem value="unpaid">Unpaid</MenuItem>
+                                <MenuItem value="canceled">Canceled</MenuItem>
+                            </Select>
+                        </FormControl>
+                        <TextField
+                            label="Total Amount"
+                            fullWidth
+                            type="number"
+                            value={editingOrder?.totalAmount || 0}
+                            onChange={(e) => handleEditOrderChange('totalAmount', Number(e.target.value))}
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleDialogClose}>Cancel</Button>
+                    <Button variant="contained" onClick={handleDialogSave}>Save</Button>
+                </DialogActions>
+            </Dialog>
+        </>
     );
 };
 
