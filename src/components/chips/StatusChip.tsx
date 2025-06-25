@@ -1,7 +1,7 @@
 import Chip from '@mui/material/Chip';
 import IconifyIcon from 'components/base/IconifyIcon';
 
-interface StatusChipProps {
+export interface StatusChipProps {
   status: 'paid' | 'canceled' | 'unpaid';
 }
 

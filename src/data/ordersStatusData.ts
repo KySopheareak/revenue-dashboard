@@ -1,5 +1,5 @@
 import { GridRowsProp } from "@mui/x-data-grid";
-import { getOrderStatus } from "services/dashboardService";
+import { getOrderStatus } from "services/dashboardService.service";
 
 
 export let ordersStatusData: GridRowsProp = [];

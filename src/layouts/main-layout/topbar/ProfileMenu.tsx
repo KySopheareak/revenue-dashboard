@@ -12,6 +12,7 @@ import IconifyIcon from 'components/base/IconifyIcon';
 import AvatarImage from 'assets/images/avater.png';
 import { useNavigate } from 'react-router-dom';
 import paths from 'routes/paths';
+import authService from 'services/authentication.service';
 
 interface MenuItems {
     id: number;
@@ -65,10 +66,8 @@ const ProfileMenu = () => {
     const handleProfileMenuClose = (item?: MenuItems) => {
 
         if (item?.title === 'Logout') {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
+            authService.logout();
             navigate(paths.login);
-            console.log('Logout clicked');
         }
         setAnchorEl(null);
     };

@@ -89,7 +89,7 @@ const RevenueChart = ({ chartRef, data, ...rest }: BarChartProps) => {
                 interval: 20000,
                 max: 100000,
             },
-            series: data?.series.map((item) => ({
+            series: data?.series?.map((item) => ({
                 name: item.name,
                 type: 'bar',
                 stack: 'total',

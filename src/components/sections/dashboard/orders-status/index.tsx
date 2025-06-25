@@ -10,8 +10,8 @@ import InputAdornment from '@mui/material/InputAdornment';
 import DateSelect from 'components/dates/DateSelect';
 import IconifyIcon from 'components/base/IconifyIcon';
 import OrdersStatusTable from './OrdersStatusTable';
-import { Dialog, DialogTitle, DialogContent, DialogActions, FormControl, MenuItem, Select } from '@mui/material';
-import { createOrder, getProducts } from 'services/dashboardService';
+import { Dialog, DialogTitle, DialogContent, DialogActions, FormControl, MenuItem, Select, Snackbar, Alert } from '@mui/material';
+import { createOrder, getProducts } from 'services/dashboardService.service';
 import { IOrder } from 'functions/common-interface';
 
 const ITEM_HEIGHT = 48;
@@ -40,6 +40,8 @@ const OrdersStatus = () => {
     const [openDialog, setOpenDialog] = useState(false);
     const [products, setProducts] = useState<Product[]>([]);
     const [orderItems, setOrderItems] = useState([{ product: '', quantity: 0 }]);
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -81,25 +83,30 @@ const OrdersStatus = () => {
         setOrderItems(orderItems.filter((_, i) => i !== index));
     };
 
-    const handleOpenDialog = () => setOpenDialog(true);    const handleCloseDialog = async (save: boolean) => {
+    const handleOpenDialog = () => setOpenDialog(true);
+
+    const handleCloseDialog = async (save: boolean) => {
         setOpenDialog(false)
         if (save) {
-            console.log('Order created:', orderItems);
-            const userID = JSON.parse(localStorage.getItem('user') || '') 
+            const userID = JSON.parse(localStorage.getItem('user') || '')
             const Json: IOrder = {
                 user: userID?.id,
                 products: orderItems
-            } 
-            console.log('Order JSON:', Json);
-            
+            }
             try {
-                const response = await createOrder(Json);
-                console.log('Order created successfully:', response);
+                await createOrder(Json);
                 setOrderItems([{ product: '', quantity: 0 }]);
+                setRefreshTrigger(prev => prev + 1);
+                setSnackbarOpen(true);
             } catch (error) {
                 console.error('Error creating order:', error);
             }
         }
+    };
+
+    const handleSnackbarClose = (_?: React.SyntheticEvent | Event, reason?: string) => {
+        if (reason === 'clickaway') return;
+        setSnackbarOpen(false);
     };
 
     return (
@@ -134,7 +141,7 @@ const OrdersStatus = () => {
             </Stack>
 
             <Box mt={1.5} sx={{ height: 594, width: 1 }}>
-                <OrdersStatusTable searchText={searchText} searchDate={searchDate} />
+                <OrdersStatusTable searchText={searchText} searchDate={searchDate} refreshTrigger={refreshTrigger} products={products} />
             </Box>
 
             <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
@@ -142,10 +149,10 @@ const OrdersStatus = () => {
                 <DialogContent sx={{ width: '100%', height: 350 }}>
                     {orderItems.map((item, idx) => (
                         <Box key={idx}>
-                            <Typography variant="body1" sx={{flex: 0.5, fontSize: '0.8rem', fontWeight: 700, position: 'relative', top: 68, left: -25}}>
+                            <Typography variant="body1" sx={{ flex: 0.5, fontSize: '0.8rem', fontWeight: 700, position: 'relative', top: 68, left: -25 }}>
                                 {idx + 1}
                             </Typography>
-                            <Box sx={{mb: 2, position: 'relative', display: 'flex', flexDirection: 'column', gap: 1, p: 2, borderRadius: 1, border: '1px solid #ccc', width: '80%'}}>
+                            <Box sx={{ mb: 2, position: 'relative', display: 'flex', flexDirection: 'column', gap: 1, p: 2, borderRadius: 1, border: '1px solid #ccc', width: '80%' }}>
                                 <Box display="flex" alignItems="center" gap={2}>
                                     <Typography variant="body1" sx={{ flex: 0.5, fontSize: '0.7rem' }}>
                                         Product
@@ -197,7 +204,7 @@ const OrdersStatus = () => {
                         </Box>
                     ))}
 
-                    <Button onClick={handleAddOrderItem} variant="outlined" startIcon={<IconifyIcon icon={'mdi:plus'} />} 
+                    <Button onClick={handleAddOrderItem} variant="outlined" startIcon={<IconifyIcon icon={'mdi:plus'} />}
                         sx={{ mb: 2, minWidth: '100px', alignItems: 'center', display: 'flex', justifyContent: 'center', left: 'calc(40% - 50px)' }}>
                         Add Product
                     </Button>
@@ -207,6 +214,16 @@ const OrdersStatus = () => {
                     <Button variant="contained" onClick={() => handleCloseDialog(true)}>Create</Button>
                 </DialogActions>
             </Dialog>
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={2000}
+                onClose={handleSnackbarClose}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert onClose={handleSnackbarClose} severity="success" sx={{ width: '100%' }}>
+                    Save successful!
+                </Alert>
+            </Snackbar>
         </Paper>
     );
 };

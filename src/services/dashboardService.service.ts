@@ -28,3 +28,8 @@ export const createOrder = async (orderData: IOrder) => {
     const response = await axios.post(`${API_BASE_URL}/order`, orderData);
     return response.data.data;
 }
+
+export const getOrderById = async (orderId: string) => {
+    const response = await axios.get(`${API_BASE_URL}/order/${orderId}`);
+    return response.data.data;
+}

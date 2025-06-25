@@ -4,7 +4,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Product from './Product';
 import { useEffect, useState } from 'react';
-import { getProducts } from 'services/dashboardService';
+import { getProducts } from 'services/dashboardService.service';
 
 type ProductData = {
     _id: string;

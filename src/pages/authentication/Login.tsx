@@ -11,9 +11,10 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
 import IconifyIcon from 'components/base/IconifyIcon';
 import paths from 'routes/paths';
-import { LoginAccount } from 'services/loginService';
+import { LoginAccount } from 'services/loginService.service';
 import { RESPONSE_STATUS } from 'functions/response-status.enums';
 import { useNavigate } from 'react-router-dom';
+import authService from 'services/authentication.service';
 
 interface User {
     username: string;
@@ -26,8 +27,6 @@ const Login = () => {
     const navigate = useNavigate();
 
     const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-        console.log(`Input changed: ${e.target.name} = ${e.target.value}`);
-
         setUser({ ...user, [e.target.name]: e.target.value });
     };
 
@@ -36,9 +35,10 @@ const Login = () => {
         try {
             const response = await LoginAccount(user.username, user.password);
             if (response.status !== RESPONSE_STATUS.SUCCESS) return;
-            localStorage.setItem('token', response.data.token);
-            localStorage.setItem('user', JSON.stringify(response.data.user));
-            navigate(paths.dashboard);
+            authService.handleLoginSuccess(response.data, navigate);
+            // localStorage.setItem('token', response.data.token);
+            // localStorage.setItem('user', JSON.stringify(response.data.user));
+            // navigate(paths.dashboard);
         } catch (error) {
             console.error('Login failed:', error);
         }

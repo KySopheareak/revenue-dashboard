@@ -8,7 +8,7 @@ import DateSelect from 'components/dates/DateSelect';
 import EChartsReactCore from 'echarts-for-react/lib/core';
 import RevenueChartLegends from './RevenueChartLegends';
 import RevenueChart from './RevenueChart';
-import { getOrderStats } from 'services/dashboardService';
+import { getOrderStats } from 'services/dashboardService.service';
 import { formatThousand } from 'functions/formatNumber';
 
 interface RevenueData {

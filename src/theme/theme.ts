@@ -1,6 +1,6 @@
 import { createTheme } from '@mui/material/styles';
-import type {} from '@mui/x-data-grid/themeAugmentation';
-import type {} from '@mui/x-date-pickers/themeAugmentation';
+import type { } from '@mui/x-data-grid/themeAugmentation';
+import type { } from '@mui/x-date-pickers/themeAugmentation';
 import palette from './palette';
 import typography from './typography';
 import customShadows from './shadows';
@@ -34,38 +34,38 @@ import Paper from './components/surfaces/Paper';
 import CssBaseline from './components/utils/CssBaseline';
 
 export const theme = createTheme({
-  typography,
-  palette,
-  components: {
-    MuiButton: Button,
-    MuiButtonBase: ButtonBase,
-    MuiIconButton: IconButton,
-    MuiToolbar: Toolbar,
-    MuiChip: Chip,
-    MuiDivider: Divider,
-    MuiDataGrid: DataGrid,
-    MuiMonthCalendar: MonthCalendar,
-    MuiYearCalendar: YearCalendar,
-    MuiTextField: TextField,
-    MuiInputBase: InputBase,
-    MuiFilledInput: FilledInput,
-    MuiOutlinedInput: OutlinedInput,
-    MuiInputAdornment: InputAdornment,
-    MuiFormControlLabel: FormControlLabel,
-    MuiCheckbox: Checkbox,
-    MuiStack: Stack,
-    MuiList: List,
-    MuiMenuItem: MenuItem,
-    MuiListItemText: ListItemText,
-    MuiListItemIcon: ListItemIcon,
-    MuiListItemButton: ListItemButton,
-    MuiCollapse: Collapse,
-    MuiLink: Link,
-    MuiDrawer: Drawer,
-    MuiPaginationItem: PaginationItem,
-    MuiPaper: Paper,
-    MuiCssBaseline: CssBaseline,
-  },
-  customShadows,
-  spacing: 8,
+    typography,
+    palette,
+    components: {
+        MuiButton: Button,
+        MuiButtonBase: ButtonBase,
+        MuiIconButton: IconButton,
+        MuiToolbar: Toolbar,
+        MuiChip: Chip,
+        MuiDivider: Divider,
+        MuiDataGrid: DataGrid,
+        MuiMonthCalendar: MonthCalendar,
+        MuiYearCalendar: YearCalendar,
+        MuiTextField: TextField,
+        MuiInputBase: InputBase,
+        MuiFilledInput: FilledInput,
+        MuiOutlinedInput: OutlinedInput,
+        MuiInputAdornment: InputAdornment,
+        MuiFormControlLabel: FormControlLabel,
+        MuiCheckbox: Checkbox,
+        MuiStack: Stack,
+        MuiList: List,
+        MuiMenuItem: MenuItem,
+        MuiListItemText: ListItemText,
+        MuiListItemIcon: ListItemIcon,
+        MuiListItemButton: ListItemButton,
+        MuiCollapse: Collapse,
+        MuiLink: Link,
+        MuiDrawer: Drawer,
+        MuiPaginationItem: PaginationItem,
+        MuiPaper: Paper,
+        MuiCssBaseline: CssBaseline,
+    },
+    customShadows,
+    spacing: 8,
 });

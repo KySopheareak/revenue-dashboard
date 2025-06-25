@@ -1,50 +1,70 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ordersStatusData } from 'data/ordersStatusData';
-import { Box, SelectChangeEvent, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, FormControl, InputLabel } from '@mui/material';
+import { Alert, Box, Snackbar } from '@mui/material';
 import Stack from '@mui/material/Stack';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import Button from '@mui/material/Button';
+import TextField from '@mui/material/TextField';
+import FormControl from '@mui/material/FormControl';
 import StatusChip from 'components/chips/StatusChip';
 import IconifyIcon from 'components/base/IconifyIcon';
 import DataGridFooter from 'components/common/DataGridFooter';
 import {
     GridRowModesModel,
-    GridRowModes,
     DataGrid,
     GridApi,
     GridColDef,
     GridActionsCellItem,
-    GridRenderEditCellParams,
-    GridEventListener,
     GridRowId,
-    GridRowModel,
-    GridRowEditStopReasons,
     useGridApiRef,
 } from '@mui/x-data-grid';
-import { getOrderStatus } from 'services/dashboardService';
+import { createOrder, getOrderById, getOrderStatus } from 'services/dashboardService.service';
 import { formatNumber } from 'functions/formatNumber';
+import { fontFamily } from 'theme/typography';
+import { IOrder } from 'functions/common-interface';
 
+const ITEM_HEIGHT = 48;
+const ITEM_PADDING_TOP = 8;
+const MenuProps = {
+    PaperProps: {
+        style: {
+            maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
+            width: 200,
+            fontFamily: fontFamily.workSans,
+            fontSize: 0.875,
+        },
+    },
+};
 interface OrdersStatusTableProps {
     searchText: string;
     searchDate: Date | null;
+    refreshTrigger: number;
+    products: Product[];
 }
 
-interface EditOrderData {
-    id: string;
-    username: string;
-    email: string;
-    status: string;
-    totalAmount: number;
+interface Product {
+    _id?: string;
+    title?: string;
+    price?: number;
+    stock?: number;
 }
 
-const OrdersStatusTable = ({ searchText, searchDate }: OrdersStatusTableProps) => {
+const OrdersStatusTable = ({ searchText, searchDate, refreshTrigger, products }: OrdersStatusTableProps) => {
     const apiRef = useGridApiRef<GridApi>();
     const [rows, setRows] = useState(ordersStatusData);
     const [rowModesModel, setRowModesModel] = useState<GridRowModesModel>({});
-    const [openEditDialog, setOpenEditDialog] = useState(false);
-    const [editingOrder, setEditingOrder] = useState<EditOrderData | null>(null);
+    const [orderItems, setOrderItems] = useState([{ product: '', quantity: 0, status: '' }]);
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [openDialog, setOpenDialog] = useState(false);
+    const [isView, setIsView] = useState(false);
+
 
     useEffect(() => {
         const fetchData = async () => {
@@ -60,90 +80,65 @@ const OrdersStatusTable = ({ searchText, searchDate }: OrdersStatusTableProps) =
             }
         };
         fetchData();
-    }, [searchText, searchDate]);
+    }, [searchText, searchDate, refreshTrigger]);
 
-    const handleRowEditStop: GridEventListener<'rowEditStop'> = (params, event) => {
-        if (params.reason === GridRowEditStopReasons.rowFocusOut) {
-            event.defaultMuiPrevented = true;
-        }
-    };    const handleEditClick = (id: GridRowId) => () => {
-        const row = rows.find((r) => r.id === id);
-        if (row) {
-            setEditingOrder({
-                id: id.toString(),
-                username: row.user.username,
-                email: row.user.email,
-                status: row.status,
-                totalAmount: row.total_amount
-            });
-            setOpenEditDialog(true);
-        }
+    // Handle change for a specific order item
+    const handleOrderItemChange = (index: number, field: 'product' | 'quantity', value: string | number) => {
+        setOrderItems((prev) =>
+            prev.map((item, i) =>
+                i === index ? { ...item, [field]: value } : item
+            )
+        );
     };
 
-    const handleDialogClose = () => {
-        setOpenEditDialog(false);
-        setEditingOrder(null);
-    };
-
-    const handleDialogSave = () => {
-        if (editingOrder) {
-            const updatedRows = rows.map((row) => {
-                if (row.id === editingOrder.id) {
-                    return {
-                        ...row,
-                        user: {
-                            ...row.user,
-                            username: editingOrder.username,
-                            email: editingOrder.email
-                        },
-                        status: editingOrder.status,
-                        total_amount: editingOrder.totalAmount
-                    };
-                }
-                return row;
-            });
-            setRows(updatedRows);
-        }
-        handleDialogClose();
-    };
-
-    const handleEditOrderChange = (field: keyof EditOrderData, value: string | number) => {
-        if (editingOrder) {
-            setEditingOrder({
-                ...editingOrder,
-                [field]: value
-            });
+    // Add new order item
+    const handleAddOrderItem = async (id: number | string, viewMode: boolean) => {
+        setIsView(viewMode);
+        setOpenDialog(true);
+        try {
+            const order = await getOrderById(id.toString());
+            if (order) {
+                setOrderItems(order.products.map((item: { product: { _id: string }; quantity: number, status: string }) => ({
+                    product: item.product._id,
+                    quantity: item.quantity,
+                    status: order.status
+                })));   
+            }
+        } catch (error) {
+            console.error('Error fetching order details:', error);
         }
     };
 
-    const handleSaveClick = (id: GridRowId) => () => {
-        setRowModesModel({ ...rowModesModel, [id]: { mode: GridRowModes.View } });
+    // Remove order item
+    const handleRemoveOrderItem = (index: number) => {
+        setOrderItems(orderItems.filter((_, i) => i !== index));
     };
 
     const handleDeleteClick = (id: GridRowId) => () => {
         setRows(rows.filter((row) => row.id !== id));
     };
 
-    const handleCancelClick = (id: GridRowId) => () => {
-        setRowModesModel({
-            ...rowModesModel,
-            [id]: { mode: GridRowModes.View, ignoreModifications: true },
-        });
-
-        const editedRow = rows.find((row) => row.id === id);
-        if (editedRow!.isNew) {
-            setRows(rows.filter((row) => row.id !== id));
+    const handleCloseDialog = async (save: boolean) => {
+        setOpenDialog(false)
+        if (save) {
+            const userID = JSON.parse(localStorage.getItem('user') || '')
+            const Json: IOrder = {
+                user: userID?.id,
+                products: orderItems
+            }
+            try {
+                await createOrder(Json);
+                setOrderItems([{ product: '', quantity: 0, status: '' }]);
+                setSnackbarOpen(true);
+            } catch (error) {
+                console.error('Error creating order:', error);
+            }
         }
     };
 
-    const processRowUpdate = (newRow: GridRowModel) => {
-        const updatedRow = { ...newRow, isNew: false };
-        setRows(rows.map((row) => (row.id === newRow.id ? updatedRow : row)));
-        return updatedRow;
-    };
-
-    const handleRowModesModelChange = (newRowModesModel: GridRowModesModel) => {
-        setRowModesModel(newRowModesModel);
+    const handleSnackbarClose = (_?: React.SyntheticEvent | Event, reason?: string) => {
+        if (reason === 'clickaway') return;
+        setSnackbarOpen(false);
     };
 
     const columns: GridColDef[] = [
@@ -225,23 +220,6 @@ const OrdersStatusTable = ({ searchText, searchDate }: OrdersStatusTableProps) =
                     </Stack>
                 );
             },
-            renderEditCell: (params: GridRenderEditCellParams) => {
-                const handleChange = (event: SelectChangeEvent<string>) => {
-                    params.api.setEditCellValue({
-                        id: params.id,
-                        field: params.field,
-                        value: event.target.value,
-                    });
-                };
-                return (
-                    <Select value={params.value} onChange={handleChange} fullWidth>
-                        <MenuItem value="paid">Paid</MenuItem>
-                        <MenuItem value="unpaid">Unpaid</MenuItem>
-                        <MenuItem value="canceled">Canceled</MenuItem>
-                    </Select>
-                );
-            },
-            editable: true,
         },
         {
             field: 'products',
@@ -308,38 +286,19 @@ const OrdersStatusTable = ({ searchText, searchDate }: OrdersStatusTableProps) =
                 </Stack>
             ),
             getActions: ({ id }) => {
-                const isInEditMode = rowModesModel[id]?.mode === GridRowModes.Edit;
-
-                if (isInEditMode) {
-                    return [
-                        <GridActionsCellItem
-                            icon={
-                                <IconifyIcon
-                                    color="primary.main"
-                                    icon="mdi:content-save"
-                                    sx={{ fontSize: 'body1.fontSize', pointerEvents: 'none' }}
-                                />
-                            }
-                            label="Save"
-                            onClick={handleSaveClick(id)}
-                            size="small"
-                        />,
-                        <GridActionsCellItem
-                            icon={
-                                <IconifyIcon
-                                    color="text.secondary"
-                                    icon="iconamoon:sign-times-duotone"
-                                    sx={{ fontSize: 'body1.fontSize', pointerEvents: 'none' }}
-                                />
-                            }
-                            label="Cancel"
-                            onClick={handleCancelClick(id)}
-                            size="small"
-                        />,
-                    ];
-                }
-
                 return [
+                    <GridActionsCellItem
+                        icon={
+                            <IconifyIcon
+                                icon="mdi:eye"
+                                color="text.secondary"
+                                sx={{ fontSize: 'body1.fontSize', pointerEvents: 'none' }}
+                            />
+                        }
+                        label="View/Edit Details"
+                        onClick={() => handleAddOrderItem(id, true)}
+                        size="small"
+                    />,
                     <GridActionsCellItem
                         icon={
                             <IconifyIcon
@@ -349,7 +308,7 @@ const OrdersStatusTable = ({ searchText, searchDate }: OrdersStatusTableProps) =
                             />
                         }
                         label="Edit"
-                        onClick={handleEditClick(id)}
+                        onClick={() => handleAddOrderItem(id, false)}
                         size="small"
                     />,
                     <GridActionsCellItem
@@ -367,7 +326,9 @@ const OrdersStatusTable = ({ searchText, searchDate }: OrdersStatusTableProps) =
                 ];
             },
         },
-    ];    return (
+    ];
+
+    return (
         <>
             <DataGrid
                 apiRef={apiRef}
@@ -388,9 +349,6 @@ const OrdersStatusTable = ({ searchText, searchDate }: OrdersStatusTableProps) =
                 disableVirtualization
                 disableRowSelectionOnClick
                 rowModesModel={rowModesModel}
-                onRowModesModelChange={handleRowModesModelChange}
-                onRowEditStop={handleRowEditStop}
-                processRowUpdate={processRowUpdate}
                 slots={{
                     pagination: DataGridFooter,
                 }}
@@ -398,52 +356,99 @@ const OrdersStatusTable = ({ searchText, searchDate }: OrdersStatusTableProps) =
                     toolbar: { setRows, setRowModesModel },
                 }}
             />
-
-            {/* Edit Order Dialog */}
-            <Dialog open={openEditDialog} onClose={handleDialogClose} maxWidth="sm" fullWidth>
-                <DialogTitle>Edit Order</DialogTitle>
+            <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth sx={{ padding: 2 }}>
+                <DialogTitle>{isView ? 'Order Detail' : 'Edit Order'}</DialogTitle>
                 <DialogContent>
-                    <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                        <TextField
-                            fullWidth
-                            value={editingOrder?.username || ''}
-                            disabled
-                            onChange={(e) => handleEditOrderChange('username', e.target.value)}
-                        />
-                        <TextField
-                            label="Email"
-                            fullWidth
-                            type="email"
-                            value={editingOrder?.email || ''}
-                            onChange={(e) => handleEditOrderChange('email', e.target.value)}
-                        />
-                        <FormControl fullWidth>
-                            <InputLabel>Status</InputLabel>
-                            <Select
-                                value={editingOrder?.status || ''}
-                                label="Status"
-                                onChange={(e) => handleEditOrderChange('status', e.target.value)}
-                                sx={{ '& .MuiSelect-icon': { color: 'white' } }}
-                            >
-                                <MenuItem value="paid">Paid</MenuItem>
-                                <MenuItem value="unpaid">Unpaid</MenuItem>
-                                <MenuItem value="canceled">Canceled</MenuItem>
-                            </Select>
-                        </FormControl>
-                        <TextField
-                            label="Total Amount"
-                            fullWidth
-                            type="number"
-                            value={editingOrder?.totalAmount || 0}
-                            onChange={(e) => handleEditOrderChange('totalAmount', Number(e.target.value))}
-                        />
-                    </Box>
+                    <Stack sx={{ height: 1, display: 'flex', alignSelf: 'end', position: 'absolute', right: 20, top: 50, gap: 1, flexDirection: 'row' }}>
+                        <StatusChip status={orderItems[0].status === 'paid' ? 'paid' : orderItems[0].status === 'unpaid' ? 'unpaid' : 'canceled'} />
+                    </Stack>
+                    {orderItems.map((item, idx) => (
+                        <Box key={idx}>
+                            <Typography variant="body1" sx={{ flex: 0.5, fontSize: '0.8rem', fontWeight: 700, position: 'relative', top: 68, left: -25 }}>
+                                {idx + 1}
+                            </Typography>
+                            <Box sx={{ mb: 2, position: 'relative', display: 'flex', flexDirection: 'column', gap: 1, p: 2, borderRadius: 1, border: '1px solid #ccc', width: '80%' }}>
+                                <Box display="flex" alignItems="center" gap={2}>
+                                    <Typography variant="body1" sx={{ flex: 0.5, fontSize: '0.7rem' }}>
+                                        Product
+                                    </Typography>
+                                    <FormControl sx={{ flex: 5, minWidth: 200 }}>
+                                        <Select
+                                            disabled={isView}
+                                            value={item.product}
+                                            onChange={(e) => handleOrderItemChange(idx, 'product', e.target.value)}
+                                            displayEmpty
+                                            size="small"
+                                            MenuProps={MenuProps}
+                                            sx={{
+                                                '& .MuiSelect-icon': { color: 'white' },
+                                                '& .css-1a6q9hs-MuiSelect-select-MuiInputBase-input-MuiOutlinedInput-input.Mui-disabled': { WebkitTextFillColor: 'white', color: 'white' },
+                                            }}>
+                                            <MenuItem value="">
+                                                <span>-- None --</span>
+                                            </MenuItem>
+                                            {products.map((prod) => (
+                                                <MenuItem key={prod._id} value={prod._id}>
+                                                    {prod.title}
+                                                </MenuItem>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
+                                </Box>
+
+                                <Box display="flex" alignItems="center" gap={2}>
+                                    <Typography variant="body1" sx={{ flex: 0.5, fontSize: '0.7rem' }}>
+                                        Quantity
+                                    </Typography>
+                                    <FormControl sx={{ flex: 5, minWidth: 200 }}>
+                                        <TextField
+                                            disabled={isView}
+                                            type="number"
+                                            placeholder="Quantity"
+                                            size="small"
+                                            value={item.quantity}
+                                            onChange={(e) => handleOrderItemChange(idx, 'quantity', Number(e.target.value))}
+                                            inputProps={{ min: 1 }}
+                                            sx={{ '& .css-1qpqwi7-MuiInputBase-input-MuiOutlinedInput-input.Mui-disabled': { WebkitTextFillColor: 'white', color: 'white' }, }}
+                                        />
+                                    </FormControl>
+                                </Box>
+
+                                <Button
+                                    onClick={() => handleRemoveOrderItem(idx)}
+                                    disabled={orderItems.length === 1 || isView}
+                                    sx={{ position: 'absolute', right: -100, mt: 2.5 }}
+                                    color="error">
+                                    Remove
+                                </Button>
+                            </Box>
+                        </Box>
+                    ))}
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleDialogClose}>Cancel</Button>
-                    <Button variant="contained" onClick={handleDialogSave}>Save</Button>
+                    <Button onClick={() => handleCloseDialog(false)} color="secondary">
+                        Cancel
+                    </Button>
+                    <Button
+                        disabled={isView}
+                        onClick={() => handleCloseDialog(true)}
+                        color="primary"
+                        variant="contained"
+                    >
+                        Save
+                    </Button>
                 </DialogActions>
             </Dialog>
+            <Snackbar
+                open={snackbarOpen}
+                autoHideDuration={2000}
+                onClose={handleSnackbarClose}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert onClose={handleSnackbarClose} severity="success" sx={{ width: '100%' }}>
+                    Save successful!
+                </Alert>
+            </Snackbar>
         </>
     );
 };

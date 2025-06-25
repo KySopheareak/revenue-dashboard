@@ -1,7 +1,7 @@
 import Grid from '@mui/material/Grid';
 import TopCard from './TopCard';
 import { useEffect, useState } from 'react';
-import { getProductStats } from 'services/dashboardService';
+import { getProductStats } from 'services/dashboardService.service';
 import { formatThousand } from 'functions/formatNumber';
 
 type SummaryData = {
