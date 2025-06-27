@@ -17,64 +17,64 @@ import LogoImg from 'assets/images/Logo.png';
 import { topListData, bottomListData, profileListData } from 'data/sidebarListData';
 
 const DrawerItems = () => {
-  return (
-    <>
-      <Stack
-        pt={5}
-        pb={4}
-        px={3.5}
-        position={'sticky'}
-        top={0}
-        bgcolor="info.darker"
-        alignItems="center"
-        justifyContent="flex-start"
-        zIndex={1000}
-      >
-        <ButtonBase component={Link} href="/" disableRipple>
-          <Image src={LogoImg} alt="logo" height={24} width={24} sx={{ mr: 1 }} />
-          <Typography variant="h5" color="text.primary" fontWeight={600} letterSpacing={1}>
-            DashBoard
-          </Typography>
-        </ButtonBase>
-      </Stack>
+    return (
+        <>
+            <Stack
+                pt={5}
+                pb={4}
+                px={3.5}
+                position={'sticky'}
+                top={0}
+                bgcolor="info.darker"
+                alignItems="center"
+                justifyContent="flex-start"
+                zIndex={1000}
+            >
+                <ButtonBase component={Link} href="/" disableRipple>
+                    <Image src={LogoImg} alt="logo" height={24} width={24} sx={{ mr: 1 }} />
+                    <Typography variant="h5" color="text.primary" fontWeight={600} letterSpacing={1}>
+                        DashBoard
+                    </Typography>
+                </ButtonBase>
+            </Stack>
 
-      <Box px={3.5} pb={3} pt={1}>
-        <TextField
-          variant="filled"
-          placeholder="Search for..."
-          sx={{ width: 1 }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <IconifyIcon icon={'mingcute:search-line'} />
-              </InputAdornment>
-            ),
-          }}
-        />
-      </Box>
+            <Box px={3.5} pb={3} pt={1}>
+                <TextField
+                    variant="filled"
+                    placeholder="Search for..."
+                    sx={{ width: 1 }}
+                    InputProps={{
+                        startAdornment: (
+                            <InputAdornment position="start">
+                                <IconifyIcon icon={'mingcute:search-line'} />
+                            </InputAdornment>
+                        ),
+                    }}
+                />
+            </Box>
 
-      <List component="nav" sx={{ px: 2.5 }}>
-        {topListData.map((route, index) => {
-          return <ListItem key={index} {...route} />;
-        })}
-      </List>
+            <List component="nav" sx={{ px: 2.5 }}>
+                {topListData.map((route, index) => {
+                    return <ListItem key={index} {...route} />;
+                })}
+            </List>
 
-      <Divider />
+            <Divider />
 
-      <List component="nav" sx={{ px: 2.5 }}>
-        {bottomListData.map((route) => {
-          if (route.items) {
-            return <CollapseListItem key={route.id} {...route} />;
-          }
-          return <ListItem key={route.id} {...route} />;
-        })}
-      </List>
+            <List component="nav" sx={{ px: 2.5 }}>
+                {bottomListData.map((route) => {
+                    if (route.items) {
+                        return <CollapseListItem key={route.id} {...route} />;
+                    }
+                    return <ListItem key={route.id} {...route} />;
+                })}
+            </List>
 
-      <List component="nav" sx={{ px: 2.5 }}>
-        {profileListData && <ProfileListItem {...profileListData} />}
-      </List>
-    </>
-  );
+            <List component="nav" sx={{ px: 2.5 }}>
+                {profileListData && <ProfileListItem {...profileListData} />}
+            </List>
+        </>
+    );
 };
 
 export default DrawerItems;

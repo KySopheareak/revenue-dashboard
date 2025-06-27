@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { format } from 'date-fns';
 import { ordersStatusData } from 'data/ordersStatusData';
-import { Alert, Box, Snackbar } from '@mui/material';
+import { Alert, Box, DialogContentText, Snackbar } from '@mui/material';
 import Stack from '@mui/material/Stack';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
@@ -22,12 +22,13 @@ import {
     GridApi,
     GridColDef,
     GridActionsCellItem,
-    GridRowId,
     useGridApiRef,
 } from '@mui/x-data-grid';
-import { createOrder, getOrderById, getOrderStatus } from 'services/dashboardService.service';
+import { createOrder, deleteOrder, getOrderById, getOrderStatus } from 'services/dashboardService.service';
 import { formatNumber } from 'functions/formatNumber';
 import { fontFamily } from 'theme/typography';
+import { RESPONSE_STATUS } from 'functions/response-status.enums';
+import authenticationService from 'services/authentication.service';
 import { IOrder } from 'functions/common-interface';
 
 const ITEM_HEIGHT = 48;
@@ -64,23 +65,25 @@ const OrdersStatusTable = ({ searchText, searchDate, refreshTrigger, products }:
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [openDialog, setOpenDialog] = useState(false);
     const [isView, setIsView] = useState(false);
+    const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
+    const [recordID, setRecordID] = useState<string | null>(null);
 
+    const fetchData = useCallback(async () => {
+        try {
+            const data = await getOrderStatus(searchText, searchDate);
+            const mappedRows = data.map((row) => ({
+                ...row,
+                id: row._id,
+            }));
+            setRows(mappedRows);
+        } catch (error) {
+            setRows([]);
+        }
+    }, [searchText, searchDate]);
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const data = await getOrderStatus(searchText, searchDate);
-                const mappedRows = data.map((row) => ({
-                    ...row,
-                    id: row._id,
-                }));
-                setRows(mappedRows);
-            } catch (error) {
-                setRows([]);
-            }
-        };
         fetchData();
-    }, [searchText, searchDate, refreshTrigger]);
+    }, [fetchData, refreshTrigger]);
 
     // Handle change for a specific order item
     const handleOrderItemChange = (index: number, field: 'product' | 'quantity', value: string | number) => {
@@ -102,7 +105,7 @@ const OrdersStatusTable = ({ searchText, searchDate, refreshTrigger, products }:
                     product: item.product._id,
                     quantity: item.quantity,
                     status: order.status
-                })));   
+                })));
             }
         } catch (error) {
             console.error('Error fetching order details:', error);
@@ -114,16 +117,34 @@ const OrdersStatusTable = ({ searchText, searchDate, refreshTrigger, products }:
         setOrderItems(orderItems.filter((_, i) => i !== index));
     };
 
-    const handleDeleteClick = (id: GridRowId) => () => {
-        setRows(rows.filter((row) => row.id !== id));
+    const handleConfirmDeletion = async (id: number | string) => {
+        setOpenConfirmDialog(true);
+        setRecordID(null);
+        setRecordID(id.toString());
+    }
+
+    const handleCloseConfirmDialog = (confrimed: boolean) => {
+        if (confrimed) {
+            setOpenConfirmDialog(false);
+            handleDeleteClick(recordID || '');
+        } else {
+            setOpenConfirmDialog(false);
+        }
+    }
+
+    const handleDeleteClick = async (id: number | string) => {
+        const response = await deleteOrder(id.toString());
+        if (response.status !== RESPONSE_STATUS.SUCCESS) return;
+        setSnackbarOpen(true);
+        await fetchData();
     };
 
     const handleCloseDialog = async (save: boolean) => {
         setOpenDialog(false)
         if (save) {
-            const userID = JSON.parse(localStorage.getItem('user') || '')
+            const UserData = authenticationService.getCurrentUser();
             const Json: IOrder = {
-                user: userID?.id,
+                user: UserData?.id,
                 products: orderItems
             }
             try {
@@ -320,7 +341,7 @@ const OrdersStatusTable = ({ searchText, searchDate, refreshTrigger, products }:
                             />
                         }
                         label="Delete"
-                        onClick={handleDeleteClick(id)}
+                        onClick={() => handleConfirmDeletion(id)}
                         size="small"
                     />,
                 ];
@@ -449,6 +470,27 @@ const OrdersStatusTable = ({ searchText, searchDate, refreshTrigger, products }:
                     Save successful!
                 </Alert>
             </Snackbar>
+            <Dialog
+                open={openConfirmDialog}
+                onClose={() => setOpenConfirmDialog(false)}
+                aria-labelledby="alert-dialog-title"
+                aria-describedby="alert-dialog-description"
+            >
+                <DialogTitle id="alert-dialog-title">
+                    Confirm Deletion
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText id="alert-dialog-description">
+                        Are you sure you want to delete this order? <br></br> This action cannot be undone.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => handleCloseConfirmDialog(false)}>Disagree</Button>
+                    <Button onClick={() => handleCloseConfirmDialog(true)} autoFocus>
+                        Agree
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </>
     );
 };

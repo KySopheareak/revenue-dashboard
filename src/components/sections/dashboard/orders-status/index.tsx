@@ -13,6 +13,7 @@ import OrdersStatusTable from './OrdersStatusTable';
 import { Dialog, DialogTitle, DialogContent, DialogActions, FormControl, MenuItem, Select, Snackbar, Alert } from '@mui/material';
 import { createOrder, getProducts } from 'services/dashboardService.service';
 import { IOrder } from 'functions/common-interface';
+import authenticationService from 'services/authentication.service';
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -88,13 +89,14 @@ const OrdersStatus = () => {
     const handleCloseDialog = async (save: boolean) => {
         setOpenDialog(false)
         if (save) {
-            const userID = JSON.parse(localStorage.getItem('user') || '')
+            const UserData = authenticationService.getCurrentUser();
             const Json: IOrder = {
-                user: userID?.id,
+                user: UserData?.id,
                 products: orderItems
             }
             try {
-                await createOrder(Json);
+                const res = await createOrder(Json);
+                if(!res) return;
                 setOrderItems([{ product: '', quantity: 0 }]);
                 setRefreshTrigger(prev => prev + 1);
                 setSnackbarOpen(true);
@@ -221,7 +223,7 @@ const OrdersStatus = () => {
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
             >
                 <Alert onClose={handleSnackbarClose} severity="success" sx={{ width: '100%' }}>
-                    Save successful!
+                    Successfully!
                 </Alert>
             </Snackbar>
         </Paper>

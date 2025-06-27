@@ -33,3 +33,18 @@ export const getOrderById = async (orderId: string) => {
     const response = await axios.get(`${API_BASE_URL}/order/${orderId}`);
     return response.data.data;
 }
+
+export const deleteOrder = async (orderId: string) => {
+    const response = await axios.delete(`${API_BASE_URL}/order/${orderId}/delete`);
+    return response.data;
+}
+
+export const userList = async (searchText?: string):Promise<GridRowsProp> => {
+    const response = await axios.post(`${API_BASE_URL}/user/list`, { search: searchText });
+    return response.data.data.users;
+}
+
+export const createUser = async (userData: { username: string; email: string; password: string; type: string }) => {
+    const response = await axios.post(`${API_BASE_URL}/user/register`, userData);
+    return response.data.data;
+}

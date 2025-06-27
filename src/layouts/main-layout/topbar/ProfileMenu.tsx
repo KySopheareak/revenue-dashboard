@@ -72,6 +72,8 @@ const ProfileMenu = () => {
         setAnchorEl(null);
     };
 
+    const UserData = authService.getCurrentUser();
+
     return (
         <>
             <Tooltip title="Profile">
@@ -92,7 +94,7 @@ const ProfileMenu = () => {
                                 bgcolor: theme.palette.primary.main,
                             })}
                         />
-                        <Typography variant="subtitle2">Mr. Admin 168</Typography>
+                        <Typography variant="subtitle2">{UserData?.username}</Typography>
                     </Stack>
                 </ButtonBase>
             </Tooltip>
@@ -133,10 +135,10 @@ const ProfileMenu = () => {
                     />
                     <Stack direction="column">
                         <Typography variant="body2" fontWeight={500}>
-                            John Carter
+                            {UserData?.username || 'Admin'}
                         </Typography>
                         <Typography variant="caption" fontWeight={400} color="text.secondary">
-                            john@example.com
+                            {UserData?.email || 'admin@gmail.com'}
                         </Typography>
                     </Stack>
                 </MenuItem>

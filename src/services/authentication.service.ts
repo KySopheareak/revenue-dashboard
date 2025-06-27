@@ -114,7 +114,7 @@ class AuthService {
                     this.logout();
                     // Optionally emit an event or show notification
                     console.log('Token expired, please login again');
-                    window.location.href = '/login';
+                    window.location.href = '/authentication/Login';
                 }, timeUntilExpiry);
             }
         } catch (error) {
