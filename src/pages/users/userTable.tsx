@@ -24,9 +24,10 @@ interface IUserTable {
     searchText?: string;
     searchDate?: Date;
     refreshTrigger?: number;
+    onView: (id: string, isView: boolean) => void;
 }
 
-const UserTable = ({ searchText, refreshTrigger }: IUserTable) => {
+const UserTable = ({ searchText, refreshTrigger, onView }: IUserTable) => {
     const UserData: GridRowsProp = []
     const apiRef = useGridApiRef<GridApi>();
     const [rowModesModel, setRowModesModel] = useState<GridRowModesModel>({});
@@ -147,7 +148,7 @@ const UserTable = ({ searchText, refreshTrigger }: IUserTable) => {
                 </Stack>
             ),
             // getActions: ({ id }) => {
-            getActions: () => {
+            getActions: ({ id }) => {
                 return [
                     <GridActionsCellItem
                         icon={
@@ -158,7 +159,7 @@ const UserTable = ({ searchText, refreshTrigger }: IUserTable) => {
                             />
                         }
                         label="View/Edit Details"
-                        // onClick={() => handleAddOrderItem(id, true)}
+                        onClick={() => onView(id as string, true)}
                         size="small"
                     />,
                     <GridActionsCellItem

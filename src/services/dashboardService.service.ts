@@ -48,3 +48,8 @@ export const createUser = async (userData: { username: string; email: string; pa
     const response = await axios.post(`${API_BASE_URL}/user/register`, userData);
     return response.data.data;
 }
+
+export const getUserById = async (userId: string) => {
+    const response = await axios.get(`${API_BASE_URL}/user/${userId}`);
+    return response.data.data;
+}

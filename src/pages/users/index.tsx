@@ -3,7 +3,7 @@ import UserTable from './userTable';
 import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, IconButton, InputAdornment, MenuItem, Paper, Select, Snackbar, Stack, TextField, Typography } from '@mui/material';
 import IconifyIcon from 'components/base/IconifyIcon';
 import { ChangeEvent, useState } from 'react';
-import { createUser } from 'services/dashboardService.service';
+import { createUser, getUserById } from 'services/dashboardService.service';
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -41,7 +41,22 @@ const User = () => {
         setSearchText(e.target.value);
     };
 
-    const handleOpenDialog = (viewMode: boolean = false) => {
+    const handleOpenDialog = async (id?: string, viewMode: boolean = false) => {
+        console.log('Open dialog with view mode:', viewMode);
+        if (id) {
+            const res = await getUserById(id);
+            if (res) {
+                setUserData({
+                    username: res.username,
+                    email: res.email,
+                    password: '',
+                    type: res.type
+                });
+            }
+        } else {
+            setUserData({ username: '', email: '', password: '', type: '' });
+        }
+
         setIsView(viewMode);
         setOpenDialog(true);
     };
@@ -100,9 +115,9 @@ const User = () => {
                     </Stack>
                 </Stack>
             </Stack>
-            
+
             <Box sx={{ height: 'calc(100% - 64px)', width: 1, px: 3.5, pt: 2, overflow: 'hidden', boxShadow: 'none' }}>
-                <UserTable searchText={searchText} refreshTrigger={refreshTrigger} />
+                <UserTable searchText={searchText} refreshTrigger={refreshTrigger} onView={(id, isView) => handleOpenDialog(id, isView)} />
             </Box>
 
             <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
@@ -122,6 +137,7 @@ const User = () => {
                                     value={userData.username}
                                     onChange={(e) => setUserData({ ...userData, username: e.target.value })}
                                     disabled={isView}
+                                    sx={{ '& .css-1qpqwi7-MuiInputBase-input-MuiOutlinedInput-input.Mui-disabled': { WebkitTextFillColor: 'white', color: 'white' }, }}
                                 />
                             </FormControl>
                         </Box>
@@ -139,38 +155,40 @@ const User = () => {
                                     value={userData.email}
                                     onChange={(e) => setUserData({ ...userData, email: e.target.value })}
                                     disabled={isView}
+                                    sx={{ '& .css-1qpqwi7-MuiInputBase-input-MuiOutlinedInput-input.Mui-disabled': { WebkitTextFillColor: 'white', color: 'white' }, }}
                                 />
                             </FormControl>
                         </Box>
-
-                        <Box display="flex" flexDirection={"column"} gap={2}>
-                            <Typography variant="body1" sx={{ flex: 0.5, fontSize: '0.7rem' }}>
-                                Password
-                            </Typography>
-                            <FormControl sx={{ flex: 5, minWidth: 200 }}>
-                                <TextField
-                                    type={showPassword ? 'text' : 'password'}
-                                    placeholder="password"
-                                    size="small"
-                                    required
-                                    value={userData.password}
-                                    onChange={(e) => setUserData({ ...userData, password: e.target.value })}
-                                    inputProps={{ minLength: 8, maxLength: 12 }}
-                                    InputProps={{
-                                        endAdornment: (
-                                            <InputAdornment position="end" sx={{ opacity: userData.password ? 1 : 0 }}>
-                                                <IconButton aria-label="toggle password visibility" onClick={() => setShowPassword(!showPassword)} edge="end">
-                                                    <IconifyIcon icon={showPassword ? 'ion:eye' : 'ion:eye-off'} />
-                                                </IconButton>
-                                            </InputAdornment>
-                                        ),
-                                    }}
-                                    autoComplete=""
-                                    disabled={isView}
-                                />
-                            </FormControl>
-                        </Box>
-
+                        {!isView &&
+                            <Box display="flex" flexDirection={"column"} gap={2}>
+                                <Typography variant="body1" sx={{ flex: 0.5, fontSize: '0.7rem' }}>
+                                    Password
+                                </Typography>
+                                <FormControl sx={{ flex: 5, minWidth: 200 }}>
+                                    <TextField
+                                        type={showPassword ? 'text' : 'password'}
+                                        placeholder="password"
+                                        size="small"
+                                        required
+                                        value={userData.password}
+                                        onChange={(e) => setUserData({ ...userData, password: e.target.value })}
+                                        inputProps={{ minLength: 8, maxLength: 12 }}
+                                        InputProps={{
+                                            endAdornment: (
+                                                <InputAdornment position="end" sx={{ opacity: userData.password ? 1 : 0 }}>
+                                                    <IconButton aria-label="toggle password visibility" onClick={() => setShowPassword(!showPassword)} edge="end">
+                                                        <IconifyIcon icon={showPassword ? 'ion:eye' : 'ion:eye-off'} />
+                                                    </IconButton>
+                                                </InputAdornment>
+                                            ),
+                                        }}
+                                        autoComplete=""
+                                        disabled={isView}
+                                        sx={{ '& .css-1qpqwi7-MuiInputBase-input-MuiOutlinedInput-input.Mui-disabled': { WebkitTextFillColor: 'white', color: 'white' }, }}
+                                    />
+                                </FormControl>
+                            </Box>
+                        }
                         <Box display="flex" flexDirection={"column"} gap={2}>
                             <Typography variant="body1" sx={{ flex: 0.5, fontSize: '0.7rem' }}>
                                 Type
