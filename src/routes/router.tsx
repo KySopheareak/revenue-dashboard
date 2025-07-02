@@ -12,6 +12,7 @@ import Integration from 'pages/integrations';
 import Pricing from 'pages/pricing';
 import AuthGuard from './authGuard';
 import PageNotFound from 'pages/notFound';
+import AuthCallback from 'pages/authentication/VerfiyLogin';
 
 const App = lazy(() => import('App'));
 const Dashboard = lazy(() => import('pages/dashboard'));
@@ -132,6 +133,10 @@ const router = createBrowserRouter(
                             path: paths.signup,
                             element: <Signup />,
                         },
+                        {
+                            path: paths.verifyLogin,
+                            element: <AuthCallback />,
+                        }
                     ],
                 },
             ],

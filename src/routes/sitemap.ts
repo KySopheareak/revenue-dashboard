@@ -69,6 +69,11 @@ const sitemap: MenuItem[] = [
                 pathName: 'signup',
                 path: paths.signup,
             },
+            {
+                name: 'Verify Login',
+                pathName: 'verify-login',
+                path: paths.verifyLogin,
+            }
         ],
     },
     {

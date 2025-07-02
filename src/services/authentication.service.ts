@@ -14,6 +14,49 @@ class AuthService {
         return AuthService.instance;
     }
 
+    handleAuthCallback(token: string | null, error: string | null, navigate?: (path: string) => void): boolean {
+        try {
+            if (error) {
+                console.error('Auth callback error:', error);
+                if (navigate) {
+                    navigate('/authentication/Login?error=' + encodeURIComponent(error));
+                }
+                return false;
+            }
+
+            if (!token) {
+                console.error('No token received in callback');
+                if (navigate) {
+                    navigate('/authentication/Login?error=No token received');
+                }
+                return false;
+            }
+
+            // Decode JWT token
+            const payload = JSON.parse(atob(token.split('.')[1]));
+
+            const responseData = {
+                token: token,
+                expireTime: payload.exp,
+                user: {
+                    id: payload.id,
+                    username: payload.username,
+                    email: payload.email
+                }
+            };
+
+            this.handleLoginSuccess(responseData, navigate);
+            return true;
+
+        } catch (error) {
+            console.error('Error processing auth callback:', error);
+            if (navigate) {
+                navigate('/authentication/Login?error=Invalid token');
+            }
+            return false;
+        }
+    }
+
     // Handle login response
     handleLoginSuccess(responseData: {
         token: string;
@@ -29,13 +72,11 @@ class AuthService {
             expireTime: responseData.expireTime,
             user: responseData.user
         };
-
         localStorage.setItem('authData', JSON.stringify(authData));
         this.scheduleTokenExpiry();
-        
         if (navigate) {
             console.log(`AuthService: Navigating to ${paths.dashboard}`);
-            
+
             navigate(paths.dashboard);
         }
 
@@ -45,7 +86,6 @@ class AuthService {
     // Check if token is valid
     isTokenValid(): boolean {
         const authData = localStorage.getItem('authData');
-
         if (!authData) return false;
 
         try {
@@ -103,8 +143,7 @@ class AuthService {
             const parsedData = JSON.parse(authData);
             const currentTime = Math.floor(Date.now() / 1000);
             const timeUntilExpiry = (parsedData.expireTime - currentTime) * 1000;
-            console.log(`AuthService: Scheduling token expiry in ${timeUntilExpiry} milliseconds`);
-            
+
             if (this.tokenExpiryTimer) {
                 clearTimeout(this.tokenExpiryTimer);
             }
@@ -160,6 +199,10 @@ class AuthService {
     // Check if user is authenticated
     isAuthenticated(): boolean {
         return this.isTokenValid();
+    }
+
+    loginWithGoogle(): void {
+        window.location.href = 'http://localhost:5000/auth/google';
     }
 }
 

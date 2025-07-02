@@ -53,3 +53,13 @@ export const getUserById = async (userId: string) => {
     const response = await axios.get(`${API_BASE_URL}/user/${userId}`);
     return response.data.data;
 }
+
+export const updateUser = async (userId: string, userData: { username: string; email: string; type: string }) => {
+    const response = await axios.patch(`${API_BASE_URL}/user/${userId}/update`, userData);
+    return response.data.data;
+}
+
+export const deleteUser = async (userId: string) => {
+    const response = await axios.delete(`${API_BASE_URL}/user/${userId}/delete`);
+    return response.data;
+}

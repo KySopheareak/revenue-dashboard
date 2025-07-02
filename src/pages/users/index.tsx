@@ -1,9 +1,10 @@
 import { fontFamily } from 'theme/typography';
 import UserTable from './userTable';
-import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, IconButton, InputAdornment, MenuItem, Paper, Select, Snackbar, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControl, IconButton, InputAdornment, MenuItem, Paper, Select, Snackbar, Stack, TextField, Typography } from '@mui/material';
 import IconifyIcon from 'components/base/IconifyIcon';
 import { ChangeEvent, useState } from 'react';
-import { createUser, getUserById } from 'services/dashboardService.service';
+import { createUser, deleteUser, getUserById, updateUser } from 'services/dashboardService.service';
+import { RESPONSE_STATUS } from 'functions/response-status.enums';
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -22,6 +23,8 @@ const User = () => {
     const [searchText, setSearchText] = useState('');
     const [openDialog, setOpenDialog] = useState(false);
     const [isView, setIsView] = useState(false);
+    const [isEdit, setIsEdit] = useState(false);
+    const [isCreate, setIsCreate] = useState(true);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
     const [userData, setUserData] = useState({
         username: '',
@@ -31,6 +34,8 @@ const User = () => {
     })
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [userId, setUserId] = useState<string | null>(null);
+    const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
 
     const types = [
         { _id: 'admin', name: 'Admin' },
@@ -41,9 +46,9 @@ const User = () => {
         setSearchText(e.target.value);
     };
 
-    const handleOpenDialog = async (id?: string, viewMode: boolean = false) => {
-        console.log('Open dialog with view mode:', viewMode);
+    const handleOpenDialog = async (id?: string, mode?: { isView?: boolean; isEdit?: boolean; isCreate?: boolean }) => {
         if (id) {
+            setUserId(id);
             const res = await getUserById(id);
             if (res) {
                 setUserData({
@@ -55,15 +60,23 @@ const User = () => {
             }
         } else {
             setUserData({ username: '', email: '', password: '', type: '' });
+            setIsView(false);
+            setIsEdit(false);
+            setIsCreate(true);
         }
 
-        setIsView(viewMode);
+        if (mode) {
+            setIsView(mode.isView || false);
+            setIsEdit(mode.isEdit || false);
+            setIsCreate(mode.isCreate || false);
+        }
+
         setOpenDialog(true);
     };
 
-    const handleCloseDialog = async (save: boolean) => {
+    const handleCloseDialog = async (save: boolean, id: string | null) => {
         setOpenDialog(false)
-        if (save) {
+        if (save && !id) {
             try {
                 const res = await createUser(userData);
                 if (!res) return;
@@ -72,6 +85,17 @@ const User = () => {
                 setSnackbarOpen(true);
             } catch (error) {
                 console.error('Error creating user:', error);
+            }
+        }
+        if (save && id) {
+            try {
+                const res = await updateUser(id, userData);
+                if (!res) return;
+                setUserData({ username: '', email: '', password: '', type: '' });
+                setRefreshTrigger(prev => prev + 1);
+                setSnackbarOpen(true);
+            } catch (error) {
+                console.error('Error updating user:', error);
             }
         }
     };
@@ -83,6 +107,28 @@ const User = () => {
     const handleSnackbarClose = (_?: React.SyntheticEvent | Event, reason?: string) => {
         if (reason === 'clickaway') return;
         setSnackbarOpen(false);
+    };
+
+    const handleConfirmDeletion = async (id: number | string) => {
+        setOpenConfirmDialog(true);
+        setUserId(null);
+        setUserId(id.toString());
+    }
+
+    const handleCloseConfirmDialog = (confirmed: boolean) => {
+        if (confirmed) {
+            setOpenConfirmDialog(false);
+            handleDeleteClick(userId || '');
+        } else {
+            setOpenConfirmDialog(false);
+        }
+    };
+
+    const handleDeleteClick = async (id: number | string) => {
+        const response = await deleteUser(id.toString());
+        if (response.status !== RESPONSE_STATUS.SUCCESS) return;
+        setSnackbarOpen(true);
+        setRefreshTrigger(prev => prev + 1);
     };
 
 
@@ -117,11 +163,17 @@ const User = () => {
             </Stack>
 
             <Box sx={{ height: 'calc(100% - 64px)', width: 1, px: 3.5, pt: 2, overflow: 'hidden', boxShadow: 'none' }}>
-                <UserTable searchText={searchText} refreshTrigger={refreshTrigger} onView={(id, isView) => handleOpenDialog(id, isView)} />
+                <UserTable
+                    searchText={searchText}
+                    refreshTrigger={refreshTrigger}
+                    onView={(id, isView) => handleOpenDialog(id, { isView: isView })}
+                    onEdit={(id) => handleOpenDialog(id, { isEdit: true })}
+                    onDelete={(id) => handleConfirmDeletion(id)}
+                />
             </Box>
 
             <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-                <DialogTitle>{isView ? 'View User' : 'Create User'}</DialogTitle>
+                <DialogTitle>{isView ? 'View User' : (isEdit ? 'Edit User' : 'Create User')}</DialogTitle>
                 <DialogContent sx={{ width: '100%', height: 420, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                     <Box sx={{ mb: 2, position: 'relative', display: 'flex', flexDirection: 'column', gap: 3, p: 2 }}>
                         <Box display="flex" flexDirection={"column"} gap={2}>
@@ -159,7 +211,7 @@ const User = () => {
                                 />
                             </FormControl>
                         </Box>
-                        {!isView &&
+                        {(!isView && !isEdit && isCreate) &&
                             <Box display="flex" flexDirection={"column"} gap={2}>
                                 <Typography variant="body1" sx={{ flex: 0.5, fontSize: '0.7rem' }}>
                                     Password
@@ -200,7 +252,10 @@ const User = () => {
                                     displayEmpty
                                     size="small"
                                     MenuProps={MenuProps}
-                                    sx={{ '& .MuiSelect-icon': { color: 'white' } }}
+                                    sx={{
+                                        '& .MuiSelect-icon': { color: 'white' },
+                                        '& .css-1a6q9hs-MuiSelect-select-MuiInputBase-input-MuiOutlinedInput-input.Mui-disabled': { WebkitTextFillColor: 'white', color: 'white' },
+                                    }}
                                     disabled={isView}>
                                     <MenuItem value="">
                                         <span>-- None --</span>
@@ -216,8 +271,13 @@ const User = () => {
                     </Box>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => handleCloseDialog(false)}>Cancel</Button>
-                    <Button variant="contained" onClick={() => handleCloseDialog(true)}>Create</Button>
+                    <Button onClick={() => handleCloseDialog(false, null)}>Cancel</Button>
+                    {isCreate && (
+                        <Button variant="contained" onClick={() => handleCloseDialog(true, null)}>Create</Button>
+                    )}
+                    {isEdit && (
+                        <Button variant="contained" onClick={() => handleCloseDialog(true, userId)}>Save</Button>
+                    )}
                 </DialogActions>
             </Dialog>
 
@@ -231,6 +291,28 @@ const User = () => {
                     Successfully!
                 </Alert>
             </Snackbar>
+
+            <Dialog
+                open={openConfirmDialog}
+                onClose={() => setOpenConfirmDialog(false)}
+                aria-labelledby="alert-dialog-title"
+                aria-describedby="alert-dialog-description"
+            >
+                <DialogTitle id="alert-dialog-title">
+                    Confirm Deletion
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText id="alert-dialog-description">
+                        Are you sure you want to delete this user? <br></br> This action cannot be undone.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => handleCloseConfirmDialog(false)}>Disagree</Button>
+                    <Button onClick={() => handleCloseConfirmDialog(true)} autoFocus>
+                        Agree
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Paper>
     );
 };

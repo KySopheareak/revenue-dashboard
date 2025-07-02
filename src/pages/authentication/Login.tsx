@@ -36,9 +36,6 @@ const Login = () => {
             const response = await LoginAccount(user.username, user.password);
             if (response.status !== RESPONSE_STATUS.SUCCESS) return;
             authService.handleLoginSuccess(response.data, navigate);
-            // localStorage.setItem('token', response.data.token);
-            // localStorage.setItem('user', JSON.stringify(response.data.user));
-            // navigate(paths.dashboard);
         } catch (error) {
             console.error('Login failed:', error);
         }
@@ -50,7 +47,7 @@ const Login = () => {
                 LogIn
             </Typography>
             <Stack direction={{ xs: 'column', sm: 'row' }} mt={4} spacing={2} width={1}>
-                <Button variant="contained" color="primary" fullWidth startIcon={<IconifyIcon icon="uim:google" />}>
+                <Button variant="contained" color="primary" fullWidth startIcon={<IconifyIcon icon="uim:google" />} onClick={() => authService.loginWithGoogle()}>
                     Login with Google
                 </Button>
                 <Button variant="contained" color="secondary" fullWidth startIcon={<IconifyIcon icon="uim:apple" />}>

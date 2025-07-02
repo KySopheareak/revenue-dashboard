@@ -25,9 +25,11 @@ interface IUserTable {
     searchDate?: Date;
     refreshTrigger?: number;
     onView: (id: string, isView: boolean) => void;
+    onEdit: (id: string, isEdit: boolean) => void;
+    onDelete: (id: string) => void;
 }
 
-const UserTable = ({ searchText, refreshTrigger, onView }: IUserTable) => {
+const UserTable = ({ searchText, refreshTrigger, onView, onEdit, onDelete }: IUserTable) => {
     const UserData: GridRowsProp = []
     const apiRef = useGridApiRef<GridApi>();
     const [rowModesModel, setRowModesModel] = useState<GridRowModesModel>({});
@@ -171,7 +173,7 @@ const UserTable = ({ searchText, refreshTrigger, onView }: IUserTable) => {
                             />
                         }
                         label="Edit"
-                        // onClick={() => handleAddOrderItem(id, false)}
+                        onClick={() => onEdit(id as string, true)}
                         size="small"
                     />,
                     <GridActionsCellItem
@@ -183,7 +185,7 @@ const UserTable = ({ searchText, refreshTrigger, onView }: IUserTable) => {
                             />
                         }
                         label="Delete"
-                        // onClick={() => handleConfirmDeletion(id)}
+                        onClick={() => onDelete(id as string)}
                         size="small"
                     />,
                 ];
