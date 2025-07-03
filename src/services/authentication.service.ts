@@ -34,7 +34,6 @@ class AuthService {
 
             // Decode JWT token
             const payload = JSON.parse(atob(token.split('.')[1]));
-
             const responseData = {
                 token: token,
                 expireTime: payload.exp,
@@ -143,6 +142,7 @@ class AuthService {
             const parsedData = JSON.parse(authData);
             const currentTime = Math.floor(Date.now() / 1000);
             const timeUntilExpiry = (parsedData.expireTime - currentTime) * 1000;
+            console.log(`Scheduling token expiry in ${Math.floor(timeUntilExpiry / 60000)} minutes`);
 
             if (this.tokenExpiryTimer) {
                 clearTimeout(this.tokenExpiryTimer);

@@ -18,6 +18,7 @@ export default {
     login: `/${rootPaths.authRoot}/login`,
     signup: `/${rootPaths.authRoot}/sign-up`,
     verifyLogin: `/${rootPaths.authRoot}/verify-login`,
+    verifyOTP: `/${rootPaths.authRoot}/verify-otp`,
     forgotPassword: `/${rootPaths.authRoot}/forgot-password`,
     comingSoon: `/coming-soon`,
     404: `/${rootPaths.errorRoot}/404`,

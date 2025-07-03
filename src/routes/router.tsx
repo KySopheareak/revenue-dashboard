@@ -12,6 +12,8 @@ import Integration from 'pages/integrations';
 import Pricing from 'pages/pricing';
 import AuthGuard from './authGuard';
 import PageNotFound from 'pages/notFound';
+// import AuthCallback from 'pages/authentication/VerfiyLogin';
+import VerifyOTP from 'pages/authentication/VerifyOTP';
 import AuthCallback from 'pages/authentication/VerfiyLogin';
 
 const App = lazy(() => import('App'));
@@ -132,6 +134,10 @@ const router = createBrowserRouter(
                         {
                             path: paths.signup,
                             element: <Signup />,
+                        },
+                        {
+                            path: paths.verifyOTP,
+                            element: <VerifyOTP />,
                         },
                         {
                             path: paths.verifyLogin,
