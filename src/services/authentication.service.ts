@@ -204,6 +204,10 @@ class AuthService {
     loginWithGoogle(): void {
         window.location.href = 'http://localhost:5000/auth/google';
     }
+
+    loginWithTelegram(): void {
+        window.location.href = paths.comingSoon;
+    }
 }
 
 export default AuthService.getInstance();

@@ -12,6 +12,7 @@ type ProductData = {
     price: number;
     thumbnail: string;
     stock: number | string;
+    images: string[];
 }
 
 const Products = () => {

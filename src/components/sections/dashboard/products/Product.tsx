@@ -10,16 +10,17 @@ interface ProductInfoProps {
         title: string;
         stock: number | string;
         price: number | string;
+        images: string[];
     };
 }
 
 const Product = ({ data }: ProductInfoProps) => {
-    const { thumbnail, title, stock, price } = data;
+    const { title, stock, price, images } = data;
     return (
         <Stack alignItems="center" justifyContent="space-between">
             <Stack spacing={2} alignItems="center">
                 <Box height={46} width={46} bgcolor="info.dark" borderRadius={1.25}>
-                    <Image src={thumbnail} height={1} width={1} sx={{ objectFit: 'contain' }} />
+                    <Image src={images[0]} height={1} width={1} sx={{ objectFit: 'contain' }} />
                 </Box>
 
                 <Stack direction="column">

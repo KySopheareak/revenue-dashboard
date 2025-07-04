@@ -50,8 +50,8 @@ const Login = () => {
                 <Button variant="contained" color="primary" fullWidth startIcon={<IconifyIcon icon="uim:google" />} onClick={() => authService.loginWithGoogle()}>
                     Login with Google
                 </Button>
-                <Button variant="contained" color="secondary" fullWidth startIcon={<IconifyIcon icon="uim:apple" />}>
-                    Login with Apple
+                <Button sx={{textWrap: 'nowrap'}} variant="contained" color="primary" fullWidth startIcon={<IconifyIcon icon="uim:telegram" />} onClick={() => authService.loginWithTelegram()}>
+                    Login with Telegram
                 </Button>
             </Stack>
             <Divider sx={{ my: 3 }}>or Login with</Divider>
